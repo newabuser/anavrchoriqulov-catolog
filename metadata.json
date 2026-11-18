@@ -1,0 +1,6 @@
+{
+  "name": "Julian Mercer — Digital Artist & Painter",
+  "description": "A luxury dark-themed digital art gallery and portfolio showcasing contemporary paintings, figurative studies, still life, and nocturnal street works.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
