@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ArrowUpRight, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { TELEGRAM_PURCHASE_URL } from '../data/portfolioData';
 import { Artwork } from '../types/artwork';
+import { useLanguage } from '../context/LanguageContext';
+import { formatDisplayPrice, isArtworkSold } from '../utils/galleryLogic';
 
 interface ArtworkLightboxProps {
   artwork: Artwork | null;
@@ -8,7 +11,6 @@ interface ArtworkLightboxProps {
   currentIndex: number;
   onClose: () => void;
   onNavigate: (direction: 'prev' | 'next') => void;
-  onInquire: (artworkTitle: string) => void;
 }
 
 export function ArtworkLightbox({
@@ -17,8 +19,8 @@ export function ArtworkLightbox({
   currentIndex,
   onClose,
   onNavigate,
-  onInquire,
 }: ArtworkLightboxProps) {
+  const { t } = useLanguage();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [imageError, setImageError] = useState(false);
 
@@ -74,6 +76,12 @@ export function ArtworkLightbox({
     return null;
   }
 
+  const sold = isArtworkSold(artwork);
+  const displayPrice = formatDisplayPrice(artwork.price);
+  const mediumCategoryLabel = artwork.medium.toLowerCase().includes('water')
+    ? t.portfolio.watercolorCategory
+    : t.portfolio.oilCategory;
+
   return (
     <div
       role="dialog"
@@ -92,7 +100,7 @@ export function ArtworkLightbox({
           ref={closeButtonRef}
           type="button"
           onClick={onClose}
-          aria-label="Close artwork lightbox"
+          aria-label={t.lightbox.close}
           className="absolute top-3 right-3 z-20 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#eaeaea]/20 bg-black/80 text-[#eaeaea] transition-colors hover:border-[#c81018] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
         >
           <X className="h-5 w-5" />
@@ -104,19 +112,22 @@ export function ArtworkLightbox({
             <button
               type="button"
               onClick={() => onNavigate('prev')}
-              aria-label="Previous artwork"
+              aria-label={t.lightbox.previous}
               className="absolute left-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#eaeaea]/15 bg-black/70 text-[#eaeaea] transition-colors hover:border-[#eaeaea]/50 hover:text-white focus-visible:outline-2 focus-visible:outline-[#c81018] sm:left-4"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
           )}
 
-          <div className="rounded-xl border border-neutral-800 bg-[#121214] p-2.5 shadow-[0_25px_70px_rgba(0,0,0,0.85)] sm:p-3.5">
-            <div className="rounded-lg bg-[#080808] p-1.5 ring-1 ring-[#eaeaea]/80">
+          <div className="relative rounded-xl border border-neutral-800 bg-[#121214] p-2 shadow-[0_25px_70px_rgba(0,0,0,0.85)] sm:p-3">
+            <div className="relative overflow-hidden rounded-lg bg-[#080808] ring-1 ring-[#eaeaea]/20">
               {!imageError ? (
                 <img
                   src={artwork.imageUrl}
                   alt={`${artwork.title} — ${artwork.medium}`}
+                  width={artwork.width}
+                  height={artwork.height}
+                  decoding="async"
                   referrerPolicy="no-referrer"
                   onError={() => setImageError(true)}
                   className="max-h-[54vh] w-auto max-w-full object-contain lg:max-h-[76vh]"
@@ -128,6 +139,15 @@ export function ArtworkLightbox({
                   </span>
                 </div>
               )}
+
+              {sold && (
+                <div className="pointer-events-none absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-md border border-[#eaeaea]/25 bg-[#08080a]/85 px-3 py-1 backdrop-blur-sm">
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-xs bg-[#c81018]" />
+                  <span className="font-display text-[11px] font-medium uppercase tracking-[0.22em] text-[#eaeaea]">
+                    {t.lightbox.soldStatus}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -135,7 +155,7 @@ export function ArtworkLightbox({
             <button
               type="button"
               onClick={() => onNavigate('next')}
-              aria-label="Next artwork"
+              aria-label={t.lightbox.next}
               className="absolute right-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#eaeaea]/15 bg-black/70 text-[#eaeaea] transition-colors hover:border-[#eaeaea]/50 hover:text-white focus-visible:outline-2 focus-visible:outline-[#c81018] sm:right-4"
             >
               <ChevronRight className="h-5 w-5" />
@@ -144,7 +164,7 @@ export function ArtworkLightbox({
         </div>
 
         {/* Museum Accession Details Panel */}
-        <aside className="flex w-full shrink-0 flex-col justify-between overflow-y-auto border-t border-[#eaeaea]/10 bg-[#0e0e10] p-6 sm:p-8 lg:w-[380px] lg:border-t-0 lg:border-l">
+        <aside className="flex w-full shrink-0 flex-col justify-between overflow-y-auto border-t border-[#eaeaea]/10 bg-[#0e0e10] p-6 sm:p-8 lg:w-[390px] lg:border-t-0 lg:border-l">
           <div>
             <div className="flex items-center justify-between gap-4 pr-10 text-xs uppercase tracking-[0.24em] text-neutral-400">
               <span>{artwork.accessionNumber}</span>
@@ -161,7 +181,7 @@ export function ArtworkLightbox({
             </h2>
 
             <div className="mt-2 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#c81018]">
-              <span>{artwork.category}</span>
+              <span>{mediumCategoryLabel}</span>
               <span aria-hidden="true" className="text-neutral-600">
                 /
               </span>
@@ -174,38 +194,62 @@ export function ArtworkLightbox({
 
             <dl className="mt-8 divide-y divide-[#eaeaea]/10 border-y border-[#eaeaea]/10 text-xs">
               <div className="flex justify-between gap-4 py-3">
-                <dt className="uppercase tracking-[0.18em] text-neutral-400">Medium</dt>
+                <dt className="uppercase tracking-[0.18em] text-neutral-400">{t.lightbox.medium}</dt>
                 <dd className="text-right text-[#eaeaea]">{artwork.medium}</dd>
               </div>
               <div className="flex justify-between gap-4 py-3">
-                <dt className="uppercase tracking-[0.18em] text-neutral-400">Dimensions</dt>
+                <dt className="uppercase tracking-[0.18em] text-neutral-400">{t.lightbox.dimensions}</dt>
                 <dd className="text-right tabular-nums text-[#eaeaea]">
                   {artwork.dimensions}
                 </dd>
               </div>
-              {artwork.price && (
+              {displayPrice && (
                 <div className="flex justify-between gap-4 py-3">
-                  <dt className="uppercase tracking-[0.18em] text-neutral-400">Price</dt>
+                  <dt className="uppercase tracking-[0.18em] text-neutral-400">{t.lightbox.price}</dt>
                   <dd className="text-right tabular-nums text-[#eaeaea]">
-                    {artwork.price}
+                    {displayPrice}
                   </dd>
                 </div>
               )}
               <div className="flex justify-between gap-4 py-3">
-                <dt className="uppercase tracking-[0.18em] text-neutral-400">Edition</dt>
-                <dd className="text-right text-[#eaeaea]">Unique Original</dd>
+                <dt className="uppercase tracking-[0.18em] text-neutral-400">{t.lightbox.edition}</dt>
+                <dd className="text-right text-[#eaeaea]">{t.lightbox.uniqueOriginal}</dd>
+              </div>
+              <div className="flex justify-between gap-4 py-3">
+                <dt className="uppercase tracking-[0.18em] text-neutral-400">{t.lightbox.availability}</dt>
+                <dd
+                  className={`text-right font-display uppercase tracking-[0.16em] ${
+                    sold ? 'text-[#e23c42]' : 'text-[#eaeaea]'
+                  }`}
+                >
+                  {sold ? t.lightbox.soldStatus : t.lightbox.availableStatus}
+                </dd>
               </div>
             </dl>
           </div>
 
           <div className="mt-8">
-            <button
-              type="button"
-              onClick={() => onInquire(artwork.title)}
-              className="inline-flex min-h-[44px] w-full items-center justify-center border border-[#eaeaea]/35 bg-transparent px-6 py-3 font-display text-xs font-normal uppercase tracking-[0.24em] text-[#eaeaea] transition-colors duration-200 hover:border-[#c81018] hover:bg-[#c81018] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
-            >
-              INQUIRE ABOUT THIS WORK
-            </button>
+            {sold ? (
+              <div
+                data-testid="lightbox-sold-status"
+                aria-label={t.lightbox.soldStatus}
+                className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg border border-[#eaeaea]/15 bg-white/[0.03] px-6 py-3 font-display text-xs font-medium uppercase tracking-[0.26em] text-neutral-300"
+              >
+                <span aria-hidden="true" className="h-2 w-2 rounded-xs bg-[#c81018]" />
+                <span>{t.lightbox.soldStatus}</span>
+              </div>
+            ) : (
+              <a
+                href={TELEGRAM_PURCHASE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="lightbox-buy-button"
+                className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg border border-[#c81018] bg-[#c81018] px-6 py-3 font-display text-xs font-medium uppercase tracking-[0.22em] text-white shadow-[0_10px_28px_rgba(200,16,24,0.28)] transition-colors duration-200 hover:border-[#df1d25] hover:bg-[#df1d25] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
+              >
+                <span>{t.lightbox.buyButton}</span>
+                <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+              </a>
+            )}
           </div>
         </aside>
       </div>

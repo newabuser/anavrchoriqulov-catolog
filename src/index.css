@@ -280,13 +280,6 @@
   }
 }
 
-@media (hover: hover) and (pointer: fine) {
-  html.custom-cursor-active,
-  html.custom-cursor-active * {
-    cursor: none !important;
-  }
-}
-
 @keyframes gallery-shimmer {
   0% {
     transform: translateX(-100%);

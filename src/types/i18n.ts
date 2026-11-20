@@ -25,6 +25,16 @@ export interface TranslationDictionary {
     catalogueTitle: string;
     catalogueSubtitle: string;
     allCategory: string;
+    oilCategory: string;
+    watercolorCategory: string;
+    soldCategory: string;
+    soldBadge: string;
+    availableLabel: string;
+    searchPlaceholder: string;
+    searchLabel: string;
+    clearSearch: string;
+    searchEmptyHeading: string;
+    searchEmptyDescription: string;
     inspectArtwork: string;
     viewDetails: string;
     curatorialArchive: string;
@@ -45,6 +55,7 @@ export interface TranslationDictionary {
     tagLocation: string;
     atelierPractice: string;
     studioLocation: string;
+    painterRole: string;
   };
   contact: {
     sectionLabel: string;
@@ -83,8 +94,11 @@ export interface TranslationDictionary {
     dimensions: string;
     price: string;
     edition: string;
+    availability: string;
+    availableStatus: string;
+    soldStatus: string;
     uniqueOriginal: string;
-    inquireButton: string;
+    buyButton: string;
   };
   footer: {
     rightsReserved: string;

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, Globe } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext';
-import { Language } from '../types/i18n';
 
 interface LanguageSelectorProps {
   variant?: 'desktop' | 'mobile';
@@ -137,7 +136,7 @@ export function LanguageSelector({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={prefersReducedMotion ? undefined : { opacity: 0, y: -6, scale: 0.96 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 top-full mt-2 w-44 origin-top-right overflow-hidden rounded-xl border border-[#eaeaea]/[0.18] bg-[rgba(12,12,15,0.96)] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(234,234,234,0.16)] backdrop-blur-2xl z-50"
+            className="absolute right-0 top-full mt-2 w-44 origin-top-right overflow-hidden rounded-xl border border-[#eaeaea]/[0.18] bg-[#0a0a0d]/[0.98] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.88),inset_0_1px_0_rgba(234,234,234,0.16)] backdrop-blur-2xl z-50"
           >
             {/* Subtle silver reflection line */}
             <div

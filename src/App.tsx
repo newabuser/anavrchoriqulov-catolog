@@ -4,14 +4,13 @@ import { ArtworkLightbox } from './components/ArtworkLightbox';
 import { BackToTopButton } from './components/BackToTopButton';
 import { CinematicBackdrop } from './components/CinematicBackdrop';
 import { ContactSection } from './components/ContactSection';
-import { CustomCursor } from './components/CustomCursor';
 import { Navbar } from './components/Navbar';
 import { PortfolioGallery } from './components/PortfolioGallery';
 import { ScrollProgressBar } from './components/ScrollProgressBar';
 import { WelcomeGate } from './components/WelcomeGate';
 import { ARTWORKS, GALLERY_CATEGORIES } from './data/portfolioData';
 import { Artwork, ArtworkCategory } from './types/artwork';
-import { filterArtworksByCategory, getAdjacentArtwork } from './utils/galleryLogic';
+import { filterArtworks, getAdjacentArtwork } from './utils/galleryLogic';
 import { LanguageProvider } from './context/LanguageContext';
 
 function shouldAutostartFromQuery(): boolean {
@@ -28,12 +27,13 @@ export default function App() {
   const [isEntered, setIsEntered] = useState<boolean>(shouldAutostartFromQuery);
   const [isGalleryLoading] = useState<boolean>(shouldShowSkeletonFromQuery);
   const [activeCategory, setActiveCategory] = useState<ArtworkCategory>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
-  const [inquirySubject, setInquirySubject] = useState<string>('');
+  const [inquirySubject] = useState<string>('');
 
   const filteredArtworks = useMemo(
-    () => filterArtworksByCategory(ARTWORKS, activeCategory),
-    [activeCategory]
+    () => filterArtworks(ARTWORKS, activeCategory, searchQuery),
+    [activeCategory, searchQuery]
   );
 
   const selectedIndex = useMemo(
@@ -73,11 +73,8 @@ export default function App() {
     [filteredArtworks, selectedArtworkId]
   );
 
-  const handleInquireFromLightbox = useCallback((artworkTitle: string) => {
-    setSelectedArtworkId(null);
-    setInquirySubject(artworkTitle);
-    const contactEl = document.getElementById('contact');
-    contactEl?.scrollIntoView({ behavior: 'smooth' });
+  const handleOpenArtwork = useCallback((artwork: Artwork) => {
+    setSelectedArtworkId(artwork.id);
   }, []);
 
   return (
@@ -87,7 +84,7 @@ export default function App() {
         data-entered={isEntered ? 'true' : 'false'}
       >
         <CinematicBackdrop />
-        <ScrollProgressBar visible={isEntered} layoutKey={activeCategory} />
+        <ScrollProgressBar visible={isEntered} layoutKey={`${activeCategory}-${filteredArtworks.length}`} />
         <WelcomeGate isEntered={isEntered} onEnter={handleEnterPlatform} />
 
         <div
@@ -103,10 +100,12 @@ export default function App() {
               artworks={ARTWORKS}
               categories={GALLERY_CATEGORIES}
               activeCategory={activeCategory}
+              searchQuery={searchQuery}
               isEntered={isEntered}
               isLoading={isGalleryLoading}
               onSelectCategory={handleSelectCategory}
-              onOpenArtwork={(artwork) => setSelectedArtworkId(artwork.id)}
+              onSearchChange={setSearchQuery}
+              onOpenArtwork={handleOpenArtwork}
             />
 
             <AboutSection />
@@ -124,7 +123,6 @@ export default function App() {
           currentIndex={selectedIndex}
           onClose={() => setSelectedArtworkId(null)}
           onNavigate={handleNavigateLightbox}
-          onInquire={handleInquireFromLightbox}
         />
 
         <BackToTopButton
@@ -133,7 +131,6 @@ export default function App() {
         />
 
         <div aria-hidden="true" data-testid="film-grain-overlay" className="film-grain-overlay" />
-        <CustomCursor />
       </div>
     </LanguageProvider>
   );

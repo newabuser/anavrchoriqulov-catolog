@@ -94,7 +94,7 @@ export function Navbar({ onReplayEntrance }: NavbarProps) {
         <header
           data-testid="site-navbar"
           data-scrolled={isScrolled ? 'true' : 'false'}
-          className={`pointer-events-auto relative mx-auto h-14 w-[92%] max-w-[1320px] overflow-hidden rounded-2xl border backdrop-blur-[26px] backdrop-saturate-[155%] md:h-[62px] md:w-[90%] ${
+          className={`pointer-events-auto relative mx-auto h-14 w-[92%] max-w-[1320px] rounded-2xl border backdrop-blur-[26px] backdrop-saturate-[155%] md:h-[62px] md:w-[90%] ${
             prefersReducedMotion
               ? ''
               : 'transition-[background-color,border-color,box-shadow] duration-300 ease-out'
@@ -107,18 +107,14 @@ export function Navbar({ onReplayEntrance }: NavbarProps) {
           {/* Smoked Glass Vertical Depth & Diagonal Silver-White Reflections */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(234,234,234,0.065)_0%,rgba(234,234,234,0.012)_42%,rgba(0,0,0,0.18)_100%)]"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(112deg,transparent_12%,rgba(234,234,234,0.055)_28%,transparent_44%,rgba(234,234,234,0.032)_70%,transparent_86%)]"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#eaeaea]/30 to-transparent"
-          />
+            className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+          >
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(234,234,234,0.065)_0%,rgba(234,234,234,0.012)_42%,rgba(0,0,0,0.18)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(112deg,transparent_12%,rgba(234,234,234,0.055)_28%,transparent_44%,rgba(234,234,234,0.032)_70%,transparent_86%)]" />
+            <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#eaeaea]/30 to-transparent" />
+          </div>
 
-          <div className="relative flex h-full w-full items-center justify-between gap-4 px-4 sm:px-6 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center lg:px-8">
+          <div className="relative flex h-full w-full items-center justify-between gap-3 px-4 sm:px-6 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center lg:px-8">
             {/* LEFT: AC Monogram with Subtle Metallic Highlight + ANVAR CHORIQULOV */}
             <a
               href="#home"
@@ -126,7 +122,7 @@ export function Navbar({ onReplayEntrance }: NavbarProps) {
               className={`group flex min-w-0 items-center gap-3 justify-self-start whitespace-nowrap text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#c81018] ${
                 prefersReducedMotion ? '' : 'transition-opacity duration-200'
               }`}
-              aria-label={`${ARTIST_PROFILE.name} — Return to top`}
+              aria-label={`${ARTIST_PROFILE.name} — ${t.footer.backToTop}`}
             >
               <svg
                 width="28"
@@ -234,7 +230,9 @@ export function Navbar({ onReplayEntrance }: NavbarProps) {
 
             {/* RIGHT: Language Selector + Compact Dark Charcoal Pill CONTACT CTA (Desktop/Tablet) + Mobile Menu Toggle */}
             <div className="flex items-center justify-end justify-self-end gap-2.5 sm:gap-3">
-              <LanguageSelector variant="desktop" className="hidden md:inline-block" />
+              <div className="hidden md:inline-block">
+                <LanguageSelector variant="desktop" />
+              </div>
 
               <a
                 href={contactItem.href}
@@ -364,7 +362,7 @@ export function Navbar({ onReplayEntrance }: NavbarProps) {
                     setMobileMenuOpen(false);
                     menuButtonRef.current?.focus();
                   }}
-                  aria-label="Close navigation menu"
+                  aria-label={t.nav.closeMenu}
                   className={`inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-[10px] border border-[#eaeaea]/[0.16] bg-white/[0.05] text-[#eaeaea] shadow-[inset_0_1px_0_rgba(234,234,234,0.14)] hover:border-[#c81018]/75 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018] ${
                     prefersReducedMotion ? '' : 'transition-all duration-200'
                   }`}
@@ -376,62 +374,64 @@ export function Navbar({ onReplayEntrance }: NavbarProps) {
               {/* Semantic Mobile Navigation Links: GALLERY, ABOUT & CONTACT */}
               <nav
                 aria-label="Mobile navigation"
-                className="relative z-10 flex flex-1 flex-col justify-center px-6 py-10 sm:px-10"
+                className="relative z-10 flex flex-1 flex-col px-6 py-5 sm:px-10 sm:py-8"
               >
-                <p className="mb-6 font-display text-[11px] font-light uppercase tracking-[0.38em] text-[#c81018]">
-                  {t.nav.menuTitle} · {t.about.studioLocation}
-                </p>
+                <div className="my-auto">
+                  <p className="mb-4 font-display text-[11px] font-light uppercase tracking-[0.38em] text-[#c81018] sm:mb-6">
+                    {t.nav.menuTitle} · {t.about.studioLocation}
+                  </p>
 
-                <div className="divide-y divide-[#eaeaea]/[0.11] border-y border-[#eaeaea]/[0.11]">
-                  {[...centerLinks, contactItem].map((item, idx) => (
-                    <motion.a
-                      key={item.href}
-                      href={item.href}
-                      onClick={handleLinkClick}
-                      initial={prefersReducedMotion ? false : { opacity: 0, x: 24 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{
-                        duration: prefersReducedMotion ? 0 : 0.38,
-                        delay: prefersReducedMotion ? 0 : 0.06 + idx * 0.06,
-                        ease: [0.16, 1, 0.3, 1],
-                      }}
-                      className="group flex items-center justify-between py-6 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#c81018]"
-                    >
-                      <div className="flex items-baseline gap-5">
-                        <span className="font-display text-[11px] font-light tracking-[0.28em] text-[#c81018]/85 transition-colors group-hover:text-[#c81018]">
-                          {item.index}
-                        </span>
-                        <div>
-                          <span
-                            className={`block font-mauline text-3xl font-normal uppercase tracking-[0.18em] text-[#eaeaea] sm:text-4xl ${
-                              prefersReducedMotion
-                                ? ''
-                                : 'transition-transform duration-200 group-hover:translate-x-1.5 group-hover:text-white'
-                            }`}
-                          >
-                            {item.label}
+                  <div className="divide-y divide-[#eaeaea]/[0.11] border-y border-[#eaeaea]/[0.11]">
+                    {[...centerLinks, contactItem].map((item, idx) => (
+                      <motion.a
+                        key={item.href}
+                        href={item.href}
+                        onClick={handleLinkClick}
+                        initial={prefersReducedMotion ? false : { opacity: 0, x: 24 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{
+                          duration: prefersReducedMotion ? 0 : 0.38,
+                          delay: prefersReducedMotion ? 0 : 0.06 + idx * 0.06,
+                          ease: [0.16, 1, 0.3, 1],
+                        }}
+                        className="group flex items-center justify-between py-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#c81018] sm:py-5"
+                      >
+                        <div className="flex items-baseline gap-4 sm:gap-5">
+                          <span className="font-display text-[11px] font-light tracking-[0.28em] text-[#c81018]/85 transition-colors group-hover:text-[#c81018]">
+                            {item.index}
                           </span>
-                          <span className="mt-1.5 block font-display text-[11px] font-light tracking-[0.2em] text-neutral-400 transition-colors group-hover:text-neutral-300">
-                            {item.subtitle}
-                          </span>
+                          <div>
+                            <span
+                              className={`block font-mauline text-2xl font-normal uppercase tracking-[0.18em] text-[#eaeaea] sm:text-4xl ${
+                                prefersReducedMotion
+                                  ? ''
+                                  : 'transition-transform duration-200 group-hover:translate-x-1.5 group-hover:text-white'
+                              }`}
+                            >
+                              {item.label}
+                            </span>
+                            <span className="mt-1 block font-display text-[11px] font-light tracking-[0.18em] text-neutral-400 transition-colors group-hover:text-neutral-300">
+                              {item.subtitle}
+                            </span>
+                          </div>
                         </div>
-                      </div>
 
-                      <ArrowUpRight
-                        aria-hidden="true"
-                        className={`h-5 w-5 shrink-0 text-neutral-500 group-hover:text-[#c81018] ${
-                          prefersReducedMotion
-                            ? ''
-                            : 'transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5'
-                        }`}
-                      />
-                    </motion.a>
-                  ))}
-                </div>
+                        <ArrowUpRight
+                          aria-hidden="true"
+                          className={`h-5 w-5 shrink-0 text-neutral-500 group-hover:text-[#c81018] ${
+                            prefersReducedMotion
+                              ? ''
+                              : 'transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5'
+                          }`}
+                        />
+                      </motion.a>
+                    ))}
+                  </div>
 
-                {/* Mobile Language Selector */}
-                <div className="mt-8">
-                  <LanguageSelector variant="mobile" />
+                  {/* Mobile Language Selector */}
+                  <div className="mt-6 sm:mt-8">
+                    <LanguageSelector variant="mobile" />
+                  </div>
                 </div>
               </nav>
 
@@ -439,7 +439,7 @@ export function Navbar({ onReplayEntrance }: NavbarProps) {
               <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-t border-[#eaeaea]/[0.11] px-6 pt-5 pb-[max(1.75rem,env(safe-area-inset-bottom))] sm:px-10">
                 <div>
                   <p className="font-display text-[11px] font-light uppercase tracking-[0.26em] text-neutral-400">
-                    {ARTIST_PROFILE.subtitle} · {t.about.studioLocation}
+                    {t.about.painterRole} · {t.about.studioLocation}
                   </p>
                   <a
                     href={`mailto:${ARTIST_PROFILE.contactEmail}`}

@@ -1,12 +1,53 @@
 import {
   Artwork,
   ArtworkCategory,
+  ArtworkMediumType,
   InquiryFormErrors,
   InquiryFormValues,
 } from '../types/artwork';
 
+const SOLD_MARKER_PATTERN = /\(sold\)/i;
+const WATERCOLOR_PATTERN = /watercolou?r|akvarel/i;
+
 /**
- * Filters artworks by selected gallery category.
+ * Resolves normalized medium type ('oil' | 'watercolor') for filtering and indexing.
+ */
+export function getArtworkMediumType(
+  artwork: Pick<Artwork, 'medium' | 'mediumType'>
+): ArtworkMediumType {
+  if (artwork.mediumType === 'watercolor' || artwork.mediumType === 'oil') {
+    return artwork.mediumType;
+  }
+  return WATERCOLOR_PATTERN.test(artwork.medium) ? 'watercolor' : 'oil';
+}
+
+/**
+ * Identifies whether an artwork is marked sold via explicit status or "(sold)" marker.
+ */
+export function isArtworkSold(
+  artwork: Pick<Artwork, 'price' | 'title'> & { status?: Artwork['status'] }
+): boolean {
+  if (artwork.status === 'sold') {
+    return true;
+  }
+  return SOLD_MARKER_PATTERN.test(artwork.price ?? '') || SOLD_MARKER_PATTERN.test(artwork.title);
+}
+
+/**
+ * Formats an artwork price for clean museum display when an explicit SOLD badge is rendered.
+ */
+export function formatDisplayPrice(price?: string): string | undefined {
+  if (!price) return undefined;
+  const cleaned = price.replace(/\s*\(sold\)\s*/gi, '').trim();
+  return cleaned || undefined;
+}
+
+/**
+ * Filters artworks by gallery category without duplicates.
+ * - ALL: Every artwork in the catalogue (available and sold)
+ * - OIL: Oil paintings only (available and sold)
+ * - WATERCOLOR: Watercolor artworks only (available and sold)
+ * - SOLD: All sold artworks regardless of painting medium
  */
 export function filterArtworksByCategory(
   artworks: Artwork[],
@@ -15,7 +56,69 @@ export function filterArtworksByCategory(
   if (category === 'ALL') {
     return artworks;
   }
-  return artworks.filter((item) => item.category === category);
+  if (category === 'OIL') {
+    return artworks.filter((item) => getArtworkMediumType(item) === 'oil');
+  }
+  if (category === 'WATERCOLOR') {
+    return artworks.filter((item) => getArtworkMediumType(item) === 'watercolor');
+  }
+  if (category === 'SOLD') {
+    return artworks.filter((item) => isArtworkSold(item));
+  }
+  return artworks;
+}
+
+/**
+ * Normalizes text for flexible keyword matching (lowercases and unifies curly/straight apostrophes).
+ */
+export function normalizeSearchText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u02bc\u02bb`']/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Filters artworks in real time by category and multi-token search query
+ * across title, medium (both watercolour/watercolor and oil), availability status,
+ * dimensions, price, accession number, description, and year.
+ */
+export function filterArtworks(
+  artworks: Artwork[],
+  category: ArtworkCategory,
+  searchQuery: string
+): Artwork[] {
+  const byCategory = filterArtworksByCategory(artworks, category);
+  const normalizedQuery = normalizeSearchText(searchQuery);
+  if (!normalizedQuery) {
+    return byCategory;
+  }
+
+  const tokens = normalizedQuery.split(' ').filter(Boolean);
+  return byCategory.filter((item) => {
+    const mediumType = getArtworkMediumType(item);
+    const mediumAliases =
+      mediumType === 'watercolor'
+        ? 'watercolor watercolour'
+        : 'oil painting oil paintings';
+    const availabilityToken = isArtworkSold(item) ? 'sold' : 'available';
+
+    const haystack = normalizeSearchText(
+      [
+        item.title,
+        item.medium,
+        mediumAliases,
+        availabilityToken,
+        item.dimensions,
+        item.price ?? '',
+        item.accessionNumber,
+        item.description,
+        item.year,
+      ].join(' ')
+    );
+    return tokens.every((token) => haystack.includes(token));
+  });
 }
 
 /**
@@ -27,12 +130,61 @@ export function computeCategoryCounts(
 ): Record<ArtworkCategory, number> {
   const counts = {} as Record<ArtworkCategory, number>;
   for (const category of categories) {
-    counts[category] =
-      category === 'ALL'
-        ? artworks.length
-        : artworks.filter((item) => item.category === category).length;
+    counts[category] = filterArtworksByCategory(artworks, category).length;
   }
   return counts;
+}
+
+export interface MasonryColumnEntry {
+  artwork: Artwork;
+  index: number;
+}
+
+/**
+ * Computes responsive column count clamped to visible item count so narrow
+ * filtered views (e.g. 1 or 2 items) never leave empty ghost columns.
+ */
+export function getEffectiveColumnCount(
+  viewportWidth: number,
+  itemCount: number
+): 1 | 2 | 3 {
+  const baseCols: 1 | 2 | 3 =
+    viewportWidth >= 1024 ? 3 : viewportWidth >= 640 ? 2 : 1;
+  if (itemCount <= 1) return 1;
+  if (itemCount === 2) return Math.min(baseCols, 2) as 1 | 2;
+  return baseCols;
+}
+
+/**
+ * Distributes artworks across `columnCount` columns using a shortest-column
+ * Masonry heuristic weighted by exact natural aspect ratio + metadata caption height.
+ * Guarantees each artwork appears exactly once with balanced column heights.
+ */
+export function distributeMasonryColumns(
+  artworks: Artwork[],
+  columnCount: number
+): MasonryColumnEntry[][] {
+  const cols = Math.max(1, Math.floor(columnCount));
+  const columns: MasonryColumnEntry[][] = Array.from({ length: cols }, () => []);
+  const columnHeights = new Array<number>(cols).fill(0);
+
+  artworks.forEach((artwork, index) => {
+    let shortestCol = 0;
+    for (let col = 1; col < cols; col++) {
+      if (columnHeights[col] < columnHeights[shortestCol]) {
+        shortestCol = col;
+      }
+    }
+
+    const safeWidth = artwork.width > 0 ? artwork.width : 4;
+    const safeHeight = artwork.height > 0 ? artwork.height : 3;
+    const normalizedCardHeight = safeHeight / safeWidth + 0.28;
+
+    columns[shortestCol].push({ artwork, index });
+    columnHeights[shortestCol] += normalizedCardHeight;
+  });
+
+  return columns;
 }
 
 /**

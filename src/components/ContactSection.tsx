@@ -21,6 +21,7 @@ export function ContactSection({
     subject: prefilledSubject || t.contact.defaultSubject,
     message: '',
   });
+  const [subjectEdited, setSubjectEdited] = useState(false);
   const [errors, setErrors] = useState<InquiryFormErrors>({});
   const [submittedRecord, setSubmittedRecord] = useState<InquiryFormValues | null>(null);
 
@@ -30,9 +31,26 @@ export function ContactSection({
         ...prev,
         subject: `${t.contact.inquiryPrefix} ${prefilledSubject}`,
       }));
+      setSubjectEdited(true);
       setSubmittedRecord(null);
     }
   }, [prefilledSubject, t.contact.inquiryPrefix]);
+
+  useEffect(() => {
+    if (!prefilledSubject && !subjectEdited) {
+      setValues((prev) => ({
+        ...prev,
+        subject: t.contact.defaultSubject,
+      }));
+    }
+  }, [prefilledSubject, subjectEdited, t.contact.defaultSubject]);
+
+  useEffect(() => {
+    setErrors((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      return validateInquiryForm(values, t.contact.errors);
+    });
+  }, [t.contact.errors, values]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,6 +59,7 @@ export function ContactSection({
 
     if (Object.keys(validationErrors).length === 0) {
       setSubmittedRecord(values);
+      setSubjectEdited(false);
       setValues({
         name: '',
         email: '',
@@ -64,23 +83,23 @@ export function ContactSection({
           {/* Studio Contact Details */}
           <div className="lg:col-span-5">
             <p className="font-display text-xs font-normal uppercase tracking-[0.36em] text-[#e23c42]">
-              Studio &amp; Acquisitions
+              {t.contact.sectionLabel}
             </p>
             <h2
               id="contact-heading"
               className="mt-3 font-mauline text-3xl font-normal uppercase tracking-[0.24em] text-[#eaeaea] sm:text-4xl [text-wrap:balance]"
             >
-              CONTACT
+              {t.contact.heading}
             </h2>
 
             <p className="mt-6 max-w-md text-sm leading-relaxed text-neutral-400 sm:text-[15px]">
-              For private viewings, museum loans, bespoke commissions, or framed edition availability, please reach out directly to the studio.
+              {t.contact.lead}
             </p>
 
             <dl className="mt-10 divide-y divide-[#eaeaea]/10 border-y border-[#eaeaea]/10 text-sm">
               <div className="py-4">
                 <dt className="font-display text-xs uppercase tracking-[0.22em] text-neutral-400">
-                  Direct Correspondence
+                  {t.contact.directCorrespondence}
                 </dt>
                 <dd className="mt-1.5 text-[#eaeaea]">
                   <a
@@ -93,18 +112,18 @@ export function ContactSection({
               </div>
               <div className="py-4">
                 <dt className="font-display text-xs uppercase tracking-[0.22em] text-neutral-400">
-                  Representation
+                  {t.contact.representation}
                 </dt>
                 <dd className="mt-1.5 text-neutral-200">
-                  {ARTIST_PROFILE.representation}
+                  {t.contact.representationValue}
                 </dd>
               </div>
               <div className="py-4">
                 <dt className="font-display text-xs uppercase tracking-[0.22em] text-neutral-400">
-                  Journal &amp; Studio Notes
+                  {t.contact.journalNotes}
                 </dt>
                 <dd className="mt-1.5 uppercase tracking-[0.16em] text-neutral-400">
-                  Coming Soon
+                  {t.contact.comingSoon}
                 </dd>
               </div>
             </dl>
@@ -201,20 +220,22 @@ export function ContactSection({
                   <div className="flex items-center gap-3 text-[#eaeaea]">
                     <CheckCircle2 className="h-5 w-5 shrink-0 text-[#c81018]" />
                     <h3 className="font-display text-lg font-light uppercase tracking-[0.22em]">
-                      Inquiry Sent
+                      {t.contact.inquirySent}
                     </h3>
                   </div>
                   <p className="mt-4 max-w-lg text-sm leading-relaxed text-neutral-300">
-                    Thank you, {submittedRecord.name}. Your correspondence regarding{' '}
-                    <span className="text-[#eaeaea]">{submittedRecord.subject}</span> has been recorded for studio review at{' '}
-                    <span className="text-[#eaeaea]">{ARTIST_PROFILE.contactEmail}</span>.
+                    {t.contact.inquiryConfirmation(
+                      submittedRecord.name,
+                      submittedRecord.subject,
+                      ARTIST_PROFILE.contactEmail
+                    )}
                   </p>
                   <button
                     type="button"
                     onClick={() => setSubmittedRecord(null)}
-                    className="mt-8 inline-flex min-h-[44px] items-center border border-[#eaeaea]/28 px-6 py-2.5 font-display text-xs uppercase tracking-[0.24em] text-[#eaeaea] transition-colors duration-200 hover:border-[#c81018] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
+                    className="mt-8 inline-flex min-h-[44px] items-center rounded-lg border border-[#eaeaea]/28 px-6 py-2.5 font-display text-xs uppercase tracking-[0.24em] text-[#eaeaea] transition-colors duration-200 hover:border-[#c81018] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
                   >
-                    SEND ANOTHER MESSAGE
+                    {t.contact.sendAnotherMessage}
                   </button>
                 </div>
               ) : (
@@ -225,7 +246,7 @@ export function ContactSection({
                         htmlFor="inquiry-name"
                         className="block font-display text-xs uppercase tracking-[0.22em] text-neutral-300"
                       >
-                        Name
+                        {t.contact.nameLabel}
                       </label>
                       <input
                         id="inquiry-name"
@@ -238,7 +259,7 @@ export function ContactSection({
                           if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
                         }}
                         aria-invalid={Boolean(errors.name)}
-                        placeholder="Clara Vance"
+                        placeholder={t.contact.namePlaceholder}
                         className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#eaeaea]/14 bg-[#080808] px-4 py-2.5 text-sm text-[#eaeaea] placeholder:text-neutral-600 transition-all duration-200 hover:border-[#eaeaea]/26 focus:border-[#c81018] focus:bg-[#0a0a0c] focus:ring-1 focus:ring-[#c81018]/35 focus:outline-none"
                       />
                       {errors.name && (
@@ -253,7 +274,7 @@ export function ContactSection({
                         htmlFor="inquiry-email"
                         className="block font-display text-xs uppercase tracking-[0.22em] text-neutral-300"
                       >
-                        Email
+                        {t.contact.emailLabel}
                       </label>
                       <input
                         id="inquiry-email"
@@ -266,7 +287,7 @@ export function ContactSection({
                           if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
                         }}
                         aria-invalid={Boolean(errors.email)}
-                        placeholder="clara@example.com"
+                        placeholder={t.contact.emailPlaceholder}
                         className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#eaeaea]/14 bg-[#080808] px-4 py-2.5 text-sm text-[#eaeaea] placeholder:text-neutral-600 transition-all duration-200 hover:border-[#eaeaea]/26 focus:border-[#c81018] focus:bg-[#0a0a0c] focus:ring-1 focus:ring-[#c81018]/35 focus:outline-none"
                       />
                       {errors.email && (
@@ -282,16 +303,17 @@ export function ContactSection({
                       htmlFor="inquiry-subject"
                       className="block font-display text-xs uppercase tracking-[0.22em] text-neutral-300"
                     >
-                      Subject / Work of Interest
+                      {t.contact.subjectLabel}
                     </label>
                     <input
                       id="inquiry-subject"
                       name="subject"
                       type="text"
                       value={values.subject}
-                      onChange={(e) =>
-                        setValues((prev) => ({ ...prev, subject: e.target.value }))
-                      }
+                      onChange={(e) => {
+                        setSubjectEdited(true);
+                        setValues((prev) => ({ ...prev, subject: e.target.value }));
+                      }}
                       className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#eaeaea]/14 bg-[#080808] px-4 py-2.5 text-sm text-[#eaeaea] placeholder:text-neutral-600 transition-all duration-200 hover:border-[#eaeaea]/26 focus:border-[#c81018] focus:bg-[#0a0a0c] focus:ring-1 focus:ring-[#c81018]/35 focus:outline-none"
                     />
                   </div>
@@ -301,7 +323,7 @@ export function ContactSection({
                       htmlFor="inquiry-message"
                       className="block font-display text-xs uppercase tracking-[0.22em] text-neutral-300"
                     >
-                      Message
+                      {t.contact.messageLabel}
                     </label>
                     <textarea
                       id="inquiry-message"
@@ -314,7 +336,7 @@ export function ContactSection({
                           setErrors((prev) => ({ ...prev, message: undefined }));
                       }}
                       aria-invalid={Boolean(errors.message)}
-                      placeholder="Share details regarding acquisition, exhibition loan, or commission dimensions..."
+                      placeholder={t.contact.messagePlaceholder}
                       className="mt-2 block w-full rounded-xl border border-[#eaeaea]/14 bg-[#080808] px-4 py-3 text-sm text-[#eaeaea] placeholder:text-neutral-600 transition-all duration-200 hover:border-[#eaeaea]/26 focus:border-[#c81018] focus:bg-[#0a0a0c] focus:ring-1 focus:ring-[#c81018]/35 focus:outline-none"
                     />
                     {errors.message && (
@@ -328,7 +350,7 @@ export function ContactSection({
                     type="submit"
                     className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-[#eaeaea]/35 bg-transparent px-8 py-3 font-display text-xs font-normal uppercase tracking-[0.28em] text-[#eaeaea] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#c81018] hover:bg-[#c81018] hover:text-white hover:shadow-[0_10px_28px_rgba(200,16,24,0.24)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
                   >
-                    SEND INQUIRY
+                    {t.contact.sendInquiry}
                   </button>
                 </form>
               )}
@@ -339,7 +361,7 @@ export function ContactSection({
         {/* Quiet Editorial Footer */}
         <div className="mt-20 flex flex-col items-center justify-between gap-4 border-t border-[#eaeaea]/10 pt-8 pb-12 text-xs tracking-[0.16em] text-neutral-400 sm:flex-row sm:pr-16 sm:pb-2">
           <p className="uppercase">
-            &copy; {new Date().getFullYear()} {ARTIST_PROFILE.name} · All Rights Reserved
+            &copy; {new Date().getFullYear()} {ARTIST_PROFILE.name} · {t.footer.rightsReserved}
           </p>
           <div className="flex items-center gap-6">
             {onReplayEntrance && (
@@ -348,14 +370,14 @@ export function ContactSection({
                 onClick={onReplayEntrance}
                 className="uppercase transition-colors hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-[#c81018]"
               >
-                Entrance Gate
+                {t.footer.entranceGate}
               </button>
             )}
             <a
               href="#home"
               className="uppercase transition-colors hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-[#c81018]"
             >
-              Back to Top
+              {t.footer.backToTop}
             </a>
           </div>
         </div>
