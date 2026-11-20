@@ -22,10 +22,14 @@ export function ArtworkLightbox({
 }: ArtworkLightboxProps) {
   const { t } = useLanguage();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     setImageError(false);
+    if (cardRef.current) {
+      cardRef.current.scrollTop = 0;
+    }
   }, [artwork?.id]);
 
   const isOpen = artwork !== null;
@@ -43,11 +47,14 @@ export function ArtworkLightbox({
     const previouslyFocused = document.activeElement as HTMLElement | null;
     closeButtonRef.current?.focus();
 
-    const previousOverflow = document.body.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
       previouslyFocused?.focus?.();
     };
   }, [isOpen]);
@@ -88,29 +95,35 @@ export function ArtworkLightbox({
       aria-modal="true"
       aria-labelledby="lightbox-title"
       data-testid="artwork-lightbox"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/94 p-4 backdrop-blur-md sm:p-8"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden overscroll-y-contain bg-black/94 pt-[max(0.75rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] backdrop-blur-md sm:p-6 lg:p-8"
       onClick={onClose}
     >
       <div
-        className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-[#eaeaea]/15 bg-[#0d0d0f] shadow-2xl lg:flex-row"
+        ref={cardRef}
+        data-testid="artwork-lightbox-card"
+        className="artwork-modal-card relative flex w-full max-w-6xl flex-col rounded-2xl border border-[#eaeaea]/15 bg-[#0d0d0f] shadow-2xl lg:max-h-[92vh] lg:flex-row lg:overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top-Right Close Button */}
-        <button
-          ref={closeButtonRef}
-          type="button"
-          onClick={onClose}
-          aria-label={t.lightbox.close}
-          className="absolute top-3 right-3 z-20 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#eaeaea]/20 bg-black/80 text-[#eaeaea] transition-colors hover:border-[#c81018] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        {/* Sticky Top-Right Close Button on Mobile/Tablet; Absolute Top-Right on Desktop */}
+        <div className="pointer-events-none sticky top-0 z-30 -mb-14 flex h-14 shrink-0 items-center justify-end px-3 pt-2 lg:contents">
+          <button
+            ref={closeButtonRef}
+            type="button"
+            data-testid="lightbox-close-button"
+            onClick={onClose}
+            aria-label={t.lightbox.close}
+            className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#eaeaea]/20 bg-black/85 text-[#eaeaea] backdrop-blur-sm transition-colors hover:border-[#c81018] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018] lg:absolute lg:top-3 lg:right-3 lg:z-20 lg:bg-black/80"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
         {/* Framed Artwork Canvas Stage */}
-        <div className="relative flex flex-1 items-center justify-center bg-[#060607] p-6 sm:p-10">
+        <div className="relative flex flex-none items-center justify-center bg-[#060607] px-4 pt-16 pb-6 sm:px-10 sm:pt-16 sm:pb-8 lg:flex-1 lg:p-10">
           {totalCount > 1 && (
             <button
               type="button"
+              data-testid="lightbox-prev-button"
               onClick={() => onNavigate('prev')}
               aria-label={t.lightbox.previous}
               className="absolute left-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#eaeaea]/15 bg-black/70 text-[#eaeaea] transition-colors hover:border-[#eaeaea]/50 hover:text-white focus-visible:outline-2 focus-visible:outline-[#c81018] sm:left-4"
@@ -130,7 +143,7 @@ export function ArtworkLightbox({
                   decoding="async"
                   referrerPolicy="no-referrer"
                   onError={() => setImageError(true)}
-                  className="max-h-[54vh] w-auto max-w-full object-contain lg:max-h-[76vh]"
+                  className="artwork-modal-image block h-auto w-auto max-w-full object-contain sm:max-h-[64dvh] lg:max-h-[76vh]"
                 />
               ) : (
                 <div className="flex h-72 w-72 items-center justify-center bg-neutral-900 p-6 text-center">
@@ -154,6 +167,7 @@ export function ArtworkLightbox({
           {totalCount > 1 && (
             <button
               type="button"
+              data-testid="lightbox-next-button"
               onClick={() => onNavigate('next')}
               aria-label={t.lightbox.next}
               className="absolute right-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#eaeaea]/15 bg-black/70 text-[#eaeaea] transition-colors hover:border-[#eaeaea]/50 hover:text-white focus-visible:outline-2 focus-visible:outline-[#c81018] sm:right-4"
@@ -164,7 +178,7 @@ export function ArtworkLightbox({
         </div>
 
         {/* Museum Accession Details Panel */}
-        <aside className="flex w-full shrink-0 flex-col justify-between overflow-y-auto border-t border-[#eaeaea]/10 bg-[#0e0e10] p-6 sm:p-8 lg:w-[390px] lg:border-t-0 lg:border-l">
+        <aside className="flex w-full shrink-0 flex-col justify-between border-t border-[#eaeaea]/10 bg-[#0e0e10] px-5 pt-6 pb-[max(1.75rem,env(safe-area-inset-bottom))] sm:p-8 lg:w-[390px] lg:overflow-y-auto lg:border-t-0 lg:border-l">
           <div>
             <div className="flex items-center justify-between gap-4 pr-10 text-xs uppercase tracking-[0.24em] text-neutral-400">
               <span>{artwork.accessionNumber}</span>
