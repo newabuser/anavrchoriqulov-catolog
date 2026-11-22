@@ -108,6 +108,7 @@ export default function App() {
 
           <ContactSection
             prefilledSubject={inquirySubject}
+            isEntered={isEntered}
             onReplayEntrance={handleReplayEntrance}
           />
         </div>

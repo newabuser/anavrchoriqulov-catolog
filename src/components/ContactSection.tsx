@@ -8,11 +8,13 @@ import LapisCourse from './LapisCourse';
 
 interface ContactSectionProps {
   prefilledSubject?: string;
+  isEntered?: boolean;
   onReplayEntrance?: () => void;
 }
 
 export function ContactSection({
   prefilledSubject = '',
+  isEntered = true,
   onReplayEntrance,
 }: ContactSectionProps) {
   const { t } = useLanguage();
@@ -78,7 +80,7 @@ export function ContactSection({
     >
       {/* Background LapisCourse WebGL Animation */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-85">
-        <LapisCourse speed={35} scale={180} />
+        <LapisCourse speed={35} scale={180} active={isEntered} />
       </div>
       <div className="absolute inset-0 z-0 bg-white/45 backdrop-blur-[2px]" />
 

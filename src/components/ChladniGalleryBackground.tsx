@@ -4,15 +4,47 @@
 "use client"
 
 import { useEffect, useRef, type CSSProperties } from "react"
+import {
+    CHLADNI_DESKTOP_PARTICLES,
+    getActiveHeavyAnimation,
+    getChladniRuntimeConfig,
+    setHeavyAnimationWanted,
+    subscribeHeavyAnimationCoordinator,
+} from "../utils/renderPerformance"
 
 type RGBA = [number, number, number, number]
 const CT_SAND = "#D20000"
 const CT_PLATE = "#FFFFFF"
 const ctColorCache = new Map<string, RGBA>()
 
+function parseHexDirect(c: string): RGBA | null {
+    const s = c.trim()
+    if (!s.startsWith("#")) return null
+    const h = s.slice(1)
+    if (h.length === 3 || h.length === 4) {
+        const r = parseInt(h[0] + h[0], 16)
+        const g = parseInt(h[1] + h[1], 16)
+        const b = parseInt(h[2] + h[2], 16)
+        const a = h.length === 4 ? parseInt(h[3] + h[3], 16) / 255 : 1
+        if ([r, g, b, a].every(Number.isFinite)) return [r, g, b, a]
+    } else if (h.length === 6 || h.length === 8) {
+        const r = parseInt(h.slice(0, 2), 16)
+        const g = parseInt(h.slice(2, 4), 16)
+        const b = parseInt(h.slice(4, 6), 16)
+        const a = h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1
+        if ([r, g, b, a].every(Number.isFinite)) return [r, g, b, a]
+    }
+    return null
+}
+
 function ctResolveColor(el: HTMLElement, c: string, fallback: RGBA): RGBA {
     const hit = ctColorCache.get(c)
     if (hit) return hit
+    const direct = parseHexDirect(c)
+    if (direct) {
+        ctColorCache.set(c, direct)
+        return direct
+    }
     let out = fallback
     try {
         const prev = el.style.color
@@ -48,7 +80,7 @@ const CT_MODES: readonly [number, number, number][] = [
 ]
 const CT_NM = CT_MODES.length
 const CT_DK = CT_MODES.map((m) => 5.2 / (Math.PI * Math.PI * (m[0] * m[0] + m[1] * m[1])))
-const CT_N = 12000
+const CT_MAX_N = CHLADNI_DESKTOP_PARTICLES
 const CT_SIG = 0.34 // kick strength, plate heights per √s at full amplitude
 const CT_REST = 0.3 // off-resonance agitation
 const CT_FLOOR = 0.035 // residual agitation (line thickness)
@@ -151,7 +183,7 @@ export function ChladniGalleryBackground({
 
     useEffect(() => {
         syncRunningRef.current?.()
-    }, [active])
+    }, [active, sand, plate])
 
     useEffect(() => {
         const root = rootRef.current
@@ -167,13 +199,20 @@ export function ChladniGalleryBackground({
         let W = 0
         let H = 0
         let dpr = 1
-        const X = new Float32Array(CT_N)
-        const Y = new Float32Array(CT_N)
-        const HS = new Float32Array(CT_N)
-        const PH = new Float32Array(CT_N)
-        const OM = new Float32Array(CT_N)
-        const Z = new Float32Array(CT_N)
-        const TONE = new Uint8Array(CT_N)
+        let runtimeConfig = getChladniRuntimeConfig({
+            viewportWidth: window.innerWidth,
+            hardwareConcurrency: navigator.hardwareConcurrency,
+        })
+        let activeParticles = runtimeConfig.particleCount
+        let minFrameMs = runtimeConfig.maxFps ? 1000 / runtimeConfig.maxFps : 0
+
+        const X = new Float32Array(CT_MAX_N)
+        const Y = new Float32Array(CT_MAX_N)
+        const HS = new Float32Array(CT_MAX_N)
+        const PH = new Float32Array(CT_MAX_N)
+        const OM = new Float32Array(CT_MAX_N)
+        const Z = new Float32Array(CT_MAX_N)
+        const TONE = new Uint8Array(CT_MAX_N)
         let aspect = 1.6
         let ns = 0x9e3779b9 >>> 0
 
@@ -190,7 +229,7 @@ export function ChladniGalleryBackground({
         }
         const gauss = (): number => (rnd() + rnd() + rnd() - 1.5) * 2
 
-        const onPointerMove = (e: PointerEvent) => {
+        const updatePointer = (e: PointerEvent) => {
             if (!optsRef.current.interaction) return
             const rect = canvas.getBoundingClientRect()
             if (!rect.width || !rect.height) return
@@ -213,7 +252,10 @@ export function ChladniGalleryBackground({
             pointerActive = false
         }
 
-        window.addEventListener("pointermove", onPointerMove, { passive: true })
+        window.addEventListener("pointermove", updatePointer, { passive: true })
+        window.addEventListener("pointerdown", updatePointer, { passive: true })
+        window.addEventListener("pointerup", onPointerLeave, { passive: true })
+        window.addEventListener("pointercancel", onPointerLeave, { passive: true })
         document.documentElement.addEventListener("pointerleave", onPointerLeave)
 
         let U = 0
@@ -261,12 +303,9 @@ export function ChladniGalleryBackground({
             return Math.max(-1, Math.min(CT_NM - 1, q))
         }
 
-        const plateCol = ctResolveColor(canvas, optsRef.current.plate || CT_PLATE, [255, 255, 255, 1])
-        const sandCol = ctResolveColor(canvas, optsRef.current.sand || CT_SAND, [210, 0, 0, 1])
-
         const r = mulberry32(4211)
         aspect = root.offsetWidth && root.offsetHeight ? root.offsetWidth / root.offsetHeight : 1.6
-        for (let i = 0; i < CT_N; i++) {
+        for (let i = 0; i < CT_MAX_N; i++) {
             X[i] = r() * aspect
             Y[i] = r()
             HS[i] = CT_REST
@@ -276,25 +315,42 @@ export function ChladniGalleryBackground({
             TONE[i] = (r() * 3) | 0
         }
 
+        const syncAttributes = (running: boolean) => {
+            root.setAttribute("data-running", running ? "true" : "false")
+            root.setAttribute("data-particles", String(activeParticles))
+            root.setAttribute("data-dpr-cap", String(runtimeConfig.maxDpr))
+            root.setAttribute("data-fps-cap", runtimeConfig.maxFps ? String(runtimeConfig.maxFps) : "uncapped")
+            root.setAttribute("data-sand", optsRef.current.sand || CT_SAND)
+            root.setAttribute("data-plate", optsRef.current.plate || CT_PLATE)
+        }
+
         const resize = () => {
+            runtimeConfig = getChladniRuntimeConfig({
+                viewportWidth: window.innerWidth,
+                hardwareConcurrency: navigator.hardwareConcurrency,
+            })
+            activeParticles = runtimeConfig.particleCount
+            minFrameMs = runtimeConfig.maxFps ? 1000 / runtimeConfig.maxFps : 0
+
             const w = root.offsetWidth
             const h = root.offsetHeight
-            const d = Math.min(window.devicePixelRatio || 1, 2)
+            const d = Math.min(window.devicePixelRatio || 1, runtimeConfig.maxDpr)
             if (w <= 0 || h <= 0) return
-            if (w === W && h === H && d === dpr) return
-            W = w
-            H = h
-            dpr = d
-            canvas.width = Math.max(1, Math.round(W * dpr))
-            canvas.height = Math.max(1, Math.round(H * dpr))
-            const na = W / H
-            if (na > 0 && Math.abs(na - aspect) > 1e-4) {
-                const s = na / aspect
-                for (let i = 0; i < CT_N; i++) X[i] *= s
-                aspect = na
+            if (w !== W || h !== H || d !== dpr) {
+                W = w
+                H = h
+                dpr = d
+                canvas.width = Math.max(1, Math.round(W * dpr))
+                canvas.height = Math.max(1, Math.round(H * dpr))
+                const na = W / H
+                if (na > 0 && Math.abs(na - aspect) > 1e-4) {
+                    const s = na / aspect
+                    for (let i = 0; i < CT_MAX_N; i++) X[i] *= s
+                    aspect = na
+                }
             }
+            syncAttributes(raf !== 0)
         }
-        resize()
 
         function simulate(
             dt: number,
@@ -321,7 +377,7 @@ export function ChladniGalleryBackground({
             const sq = Math.sqrt(dt)
             const lim = 0.02
 
-            for (let i = 0; i < CT_N; i++) {
+            for (let i = 0; i < activeParticles; i++) {
                 const x = X[i] / aspect
                 const y = Y[i]
                 let E = 0, gx = 0, gy = 0
@@ -424,12 +480,20 @@ export function ChladniGalleryBackground({
         let t = 0
         let raf = 0
         let last = -1
-        let isIntersecting = true
+        const initialRect = root.getBoundingClientRect()
+        let isIntersecting =
+            initialRect.width > 0 &&
+            initialRect.height > 0 &&
+            initialRect.bottom > 0 &&
+            initialRect.top < window.innerHeight
         let isTabVisible = typeof document !== "undefined" ? !document.hidden : true
         let disposed = false
 
         const drawFrame = (dt: number) => {
             if (W < 2 || H < 2) return
+
+            const plateCol = ctResolveColor(canvas, optsRef.current.plate || CT_PLATE, [255, 255, 255, 1])
+            const sandCol = ctResolveColor(canvas, optsRef.current.sand || CT_SAND, [210, 0, 0, 1])
 
             t += dt
             const width = canvas.width
@@ -484,7 +548,7 @@ export function ChladniGalleryBackground({
             const g0 = dpr * Math.min(2, Math.max(1, H / 330))
             const sandA = sandCol[3]
 
-            for (let i = 0; i < CT_N; i++) {
+            for (let i = 0; i < activeParticles; i++) {
                 PH[i] += dt * OM[i] * (0.5 + 0.8 * Math.min(1, HS[i]))
             }
 
@@ -492,7 +556,7 @@ export function ChladniGalleryBackground({
             ctx.globalAlpha = sandA * 0.5
             ctx.fillStyle = "#050706"
             ctx.beginPath()
-            for (let i = 0; i < CT_N; i++) {
+            for (let i = 0; i < activeParticles; i++) {
                 const u = PH[i] - Math.floor(PH[i])
                 const z = CT_HOP * HS[i] * 4 * u * (1 - u)
                 const zp = z * height
@@ -512,7 +576,7 @@ export function ChladniGalleryBackground({
             for (let tt = 0; tt < 3; tt++) {
                 ctx.fillStyle = tones[tt]
                 ctx.beginPath()
-                for (let i = 0; i < CT_N; i++) {
+                for (let i = 0; i < activeParticles; i++) {
                     if (TONE[i] !== tt) continue
                     const u = PH[i] - Math.floor(PH[i])
                     const z = CT_HOP * HS[i] * 4 * u * (1 - u)
@@ -539,17 +603,25 @@ export function ChladniGalleryBackground({
             return totalT - dt + (s + 1) * (dt / steps)
         }
 
-        const shouldRun = () =>
+        const isWanted = () =>
             !disposed &&
             !reducedMotion &&
             optsRef.current.active &&
             isIntersecting &&
             isTabVisible
 
+        const shouldRun = () =>
+            isWanted() && getActiveHeavyAnimation() === "chladni"
+
         const frame = (now: number) => {
             if (!shouldRun()) {
                 raf = 0
                 last = -1
+                syncAttributes(false)
+                return
+            }
+            if (minFrameMs > 0 && last >= 0 && now - last < minFrameMs - 0.5) {
+                raf = requestAnimationFrame(frame)
                 return
             }
             const dt = last < 0 ? 0 : Math.min(0.05, (now - last) / 1000)
@@ -559,23 +631,31 @@ export function ChladniGalleryBackground({
         }
 
         const syncRunning = () => {
+            setHeavyAnimationWanted("chladni", isWanted())
             if (shouldRun()) {
                 if (raf === 0) {
                     last = -1
                     raf = requestAnimationFrame(frame)
                 }
-            } else if (raf !== 0) {
-                cancelAnimationFrame(raf)
-                raf = 0
-                last = -1
+                syncAttributes(true)
+            } else {
+                if (raf !== 0) {
+                    cancelAnimationFrame(raf)
+                    raf = 0
+                    last = -1
+                }
+                syncAttributes(false)
             }
         }
         syncRunningRef.current = syncRunning
+
+        resize()
 
         // Draw one initial settled frame if reduced motion is requested
         if (reducedMotion) {
             for (let k = 0; k < 24; k++) simulate(1 / 55, 0.35, 0, 0, 0, k / 55)
             drawFrame(0)
+            syncAttributes(false)
         }
 
         const ro = new ResizeObserver(() => {
@@ -588,13 +668,16 @@ export function ChladniGalleryBackground({
             typeof IntersectionObserver !== "undefined"
                 ? new IntersectionObserver(
                       (entries) => {
-                          isIntersecting = entries.some((entry) => entry.isIntersecting)
+                          const latest = entries[entries.length - 1]
+                          isIntersecting = latest ? latest.isIntersecting : false
                           syncRunning()
                       },
                       { threshold: 0 }
                   )
                 : null
         io?.observe(root)
+
+        const unsubCoordinator = subscribeHeavyAnimationCoordinator(syncRunning)
 
         const onVisibilityChange = () => {
             isTabVisible = !document.hidden
@@ -607,11 +690,16 @@ export function ChladniGalleryBackground({
         return () => {
             disposed = true
             syncRunningRef.current = null
+            setHeavyAnimationWanted("chladni", false)
+            unsubCoordinator()
             if (raf !== 0) cancelAnimationFrame(raf)
             ro.disconnect()
             io?.disconnect()
             document.removeEventListener("visibilitychange", onVisibilityChange)
-            window.removeEventListener("pointermove", onPointerMove)
+            window.removeEventListener("pointermove", updatePointer)
+            window.removeEventListener("pointerdown", updatePointer)
+            window.removeEventListener("pointerup", onPointerLeave)
+            window.removeEventListener("pointercancel", onPointerLeave)
             document.documentElement.removeEventListener("pointerleave", onPointerLeave)
             ctx.clearRect(0, 0, canvas.width, canvas.height)
             canvas.width = 0
@@ -629,6 +717,7 @@ export function ChladniGalleryBackground({
                 height: "100%",
                 overflow: "hidden",
                 pointerEvents: "none",
+                touchAction: "pan-y",
                 ...style,
             }}
         >
@@ -642,8 +731,10 @@ export function ChladniGalleryBackground({
                     height: "100%",
                     display: "block",
                     pointerEvents: "none",
+                    touchAction: "pan-y",
                 }}
             />
         </div>
     )
 }
+

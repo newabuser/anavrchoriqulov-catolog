@@ -3,7 +3,16 @@
 
 "use client"
 
-import { useEffect, useRef, type CSSProperties } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
+import {
+    getActiveHeavyAnimation,
+    getLapisRuntimeConfig,
+    LAPIS_MIN_QUALITY,
+    setHeavyAnimationWanted,
+    stepQualityGovernor,
+    subscribeHeavyAnimationCoordinator,
+    type QualityGovernorState,
+} from "../utils/renderPerformance"
 
 type RGBA = [number, number, number, number]
 
@@ -227,6 +236,7 @@ uniform vec3 uBody;
 uniform float uWarmth;
 uniform float uShimmer;
 uniform float uHoverAmt;
+uniform float uSingleSample;
 uniform vec4 uGrid;
 uniform vec4 uTiltP;
 uniform vec4 uDriftP;
@@ -443,18 +453,24 @@ void main() {
         }
     }
 
-    vec2 o0 = vec2(0.125, 0.375) * px, o1 = vec2(-0.375, 0.125) * px;
-    vec2 o2 = vec2(-0.125, -0.375) * px, o3 = vec2(0.375, -0.125) * px;
-    Hit h0 = castAt(o0);
-    vec3 c0 = shade(h0, p + o0);
-    vec3 col = c0;
-    Hit s1 = castAt(o1);
-    col += s1.id == h0.id ? c0 : shade(s1, p + o1);
-    Hit s2 = castAt(o2);
-    col += s2.id == h0.id ? c0 : shade(s2, p + o2);
-    Hit s3 = castAt(o3);
-    col += s3.id == h0.id ? c0 : shade(s3, p + o3);
-    col *= 0.25;
+    vec3 col;
+    if (uSingleSample > 0.5) {
+        Hit h0 = castAt(vec2(0.0));
+        col = shade(h0, p);
+    } else {
+        vec2 o0 = vec2(0.125, 0.375) * px, o1 = vec2(-0.375, 0.125) * px;
+        vec2 o2 = vec2(-0.125, -0.375) * px, o3 = vec2(0.375, -0.125) * px;
+        Hit h0 = castAt(o0);
+        vec3 c0 = shade(h0, p + o0);
+        col = c0;
+        Hit s1 = castAt(o1);
+        col += s1.id == h0.id ? c0 : shade(s1, p + o1);
+        Hit s2 = castAt(o2);
+        col += s2.id == h0.id ? c0 : shade(s2, p + o2);
+        Hit s3 = castAt(o3);
+        col += s3.id == h0.id ? c0 : shade(s3, p + o3);
+        col *= 0.25;
+    }
 
     vec2 q = (uv - 0.5) * vec2(0.8, 1.2);
     col *= mix(1.0, 1.0 - uPost.y, smoothstep(0.3, 0.72, length(q)));
@@ -466,11 +482,7 @@ const VERT = `#version 300 es
 layout(location = 0) in vec2 aPos;
 void main() { gl_Position = vec4(aPos, 0.0, 1.0); }`
 
-const MAX_PIXELS = 2_000_000
 const FIELD_DIV = 4
-const SLOW_DT = 1 / 48
-const FAST_DT = 1 / 56
-const MIN_QUALITY = 0.5
 
 function num(v: unknown, d: number): number {
     return typeof v === "number" && Number.isFinite(v) ? v : d
@@ -478,75 +490,143 @@ function num(v: unknown, d: number): number {
 
 function __OriginkitBase_LapisCourse(props: LapisCourseProps) {
     props = withMovedControls(props)
-    const { background = "#101116", baseColor = "#C9CBD2", accentColor = "#FFFFFF", speed = 50, scale = 200, style } = props
+    const {
+        background = "#101116",
+        baseColor = "#C9CBD2",
+        accentColor = "#FFFFFF",
+        speed = 50,
+        scale = 200,
+        active = true,
+        style,
+    } = props
     void [baseColor, accentColor, speed, scale]
     const rootRef = useRef<HTMLDivElement>(null)
-    const canvasRef = useRef<HTMLCanvasElement>(null)
     const propsRef = useRef(props)
     propsRef.current = props
+    const activeRef = useRef(active)
+    activeRef.current = active
+    const [showCssFallback, setShowCssFallback] = useState(false)
+    const syncCoordinatorRef = useRef<(() => void) | null>(null)
+
+    useEffect(() => {
+        syncCoordinatorRef.current?.()
+    }, [active])
 
     useEffect(() => {
         const root = rootRef.current
-        const canvas = canvasRef.current
-        if (!root || !canvas) return
-        const gl = canvas.getContext("webgl2", { alpha: false, antialias: false, depth: false, stencil: false })
-        if (!gl) return
-        const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        if (!root) return
 
-        const build = (fs: string) => {
+        const reduced =
+            typeof window.matchMedia === "function" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+        let disposed = false
+        let permanentFallback = false
+        let contextLost = false
+        let intentionalTeardown = false
+        let isNear = false
+        let isFar = false
+        let isVisible = false
+        let isTabVisible = typeof document !== "undefined" ? !document.hidden : true
+
+        let canvas: HTMLCanvasElement | null = null
+        let gl: WebGL2RenderingContext | null = null
+        let wall: { prog: WebGLProgram; u: (name: string) => WebGLUniformLocation | null } | null = null
+        let field: { prog: WebGLProgram; u: (name: string) => WebGLUniformLocation | null } | null = null
+        let buf: WebGLBuffer | null = null
+        let fieldTex: WebGLTexture | null = null
+        let fbo: WebGLFramebuffer | null = null
+        let fw = 0
+        let fh = 0
+        let raf = 0
+        let clock = 0
+        let last = -1
+        let hasRenderedStatic = false
+
+        let runtimeCfg = getLapisRuntimeConfig({ viewportWidth: window.innerWidth })
+        let gov: QualityGovernorState = {
+            avgDt: 1 / 60,
+            quality: runtimeCfg.initialQuality,
+            cooldown: 0.75,
+            calm: 0,
+            slowAtMinSeconds: 0,
+            shouldFallback: false,
+        }
+
+        const updateDomState = () => {
+            root.setAttribute("data-running", raf !== 0 ? "true" : "false")
+            root.setAttribute(
+                "data-gl-state",
+                permanentFallback
+                    ? "fallback"
+                    : contextLost
+                      ? "lost"
+                      : gl
+                        ? "ready"
+                        : "idle"
+            )
+            root.setAttribute("data-max-pixels", String(runtimeCfg.maxPixels))
+            root.setAttribute("data-dpr-cap", String(runtimeCfg.maxDpr))
+            root.setAttribute("data-single-sample", runtimeCfg.singleSample ? "true" : "false")
+        }
+
+        const buildProgram = (ctxGl: WebGL2RenderingContext, fs: string) => {
             const sh = (type: number, src: string) => {
-                const s = gl.createShader(type)!
-                gl.shaderSource(s, src)
-                gl.compileShader(s)
-                if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error("LapisCourse shader:", gl.getShaderInfoLog(s))
+                const s = ctxGl.createShader(type)
+                if (!s) return null
+                ctxGl.shaderSource(s, src)
+                ctxGl.compileShader(s)
+                if (!ctxGl.getShaderParameter(s, ctxGl.COMPILE_STATUS)) {
+                    console.error("LapisCourse shader:", ctxGl.getShaderInfoLog(s))
+                }
                 return s
             }
-            const prog = gl.createProgram()!
-            const vs = sh(gl.VERTEX_SHADER, VERT)
-            const fsh = sh(gl.FRAGMENT_SHADER, fs)
-            gl.attachShader(prog, vs)
-            gl.attachShader(prog, fsh)
-            gl.linkProgram(prog)
-            gl.deleteShader(vs)
-            gl.deleteShader(fsh)
-            if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-                console.error("LapisCourse link:", gl.getProgramInfoLog(prog))
-                gl.deleteProgram(prog)
+            const prog = ctxGl.createProgram()
+            const vs = sh(ctxGl.VERTEX_SHADER, VERT)
+            const fsh = sh(ctxGl.FRAGMENT_SHADER, fs)
+            if (!prog || !vs || !fsh) {
+                if (vs) ctxGl.deleteShader(vs)
+                if (fsh) ctxGl.deleteShader(fsh)
+                if (prog) ctxGl.deleteProgram(prog)
+                return null
+            }
+            ctxGl.attachShader(prog, vs)
+            ctxGl.attachShader(prog, fsh)
+            ctxGl.linkProgram(prog)
+            ctxGl.deleteShader(vs)
+            ctxGl.deleteShader(fsh)
+            if (!ctxGl.getProgramParameter(prog, ctxGl.LINK_STATUS)) {
+                console.error("LapisCourse link:", ctxGl.getProgramInfoLog(prog))
+                ctxGl.deleteProgram(prog)
                 return null
             }
             const cache = new Map<string, WebGLUniformLocation | null>()
             const u = (name: string) => {
-                if (!cache.has(name)) cache.set(name, gl.getUniformLocation(prog, name))
+                if (!cache.has(name)) cache.set(name, ctxGl.getUniformLocation(prog, name))
                 return cache.get(name) ?? null
             }
             return { prog, u }
         }
-        const wall = build(FRAG)
-        const field = build(FIELD)
-        if (!wall || !field) return
 
-        const buf = gl.createBuffer()
-        gl.bindBuffer(gl.ARRAY_BUFFER, buf)
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
-        gl.enableVertexAttribArray(0)
-        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
-
-        const fieldTex = gl.createTexture()
-        gl.bindTexture(gl.TEXTURE_2D, fieldTex)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-        const fbo = gl.createFramebuffer()
-        let fw = 0
-        let fh = 0
-
-        let quality = 1
         const resize = () => {
+            const prevMobile = runtimeCfg.isMobile
+            runtimeCfg = getLapisRuntimeConfig({ viewportWidth: window.innerWidth })
+            if (runtimeCfg.isMobile !== prevMobile) {
+                gov = {
+                    ...gov,
+                    quality: runtimeCfg.isMobile
+                        ? Math.min(gov.quality, runtimeCfg.initialQuality)
+                        : 1,
+                }
+            }
+            if (!canvas || !gl || contextLost) {
+                updateDomState()
+                return
+            }
             const cw = Math.max(1, root.offsetWidth)
             const ch = Math.max(1, root.offsetHeight)
-            const dpr = Math.min(window.devicePixelRatio || 1, 2)
-            const s = Math.min(dpr * quality, Math.sqrt(MAX_PIXELS / (cw * ch)))
+            const dpr = Math.min(window.devicePixelRatio || 1, runtimeCfg.maxDpr)
+            const s = Math.min(dpr * gov.quality, Math.sqrt(runtimeCfg.maxPixels / (cw * ch)))
             const w = Math.max(1, Math.round(cw * s))
             const h = Math.max(1, Math.round(ch * s))
             if (canvas.width !== w || canvas.height !== h) {
@@ -564,10 +644,8 @@ function __OriginkitBase_LapisCourse(props: LapisCourseProps) {
                 gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fieldTex, 0)
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null)
             }
+            updateDomState()
         }
-        const ro = new ResizeObserver(resize)
-        ro.observe(root)
-        resize()
 
         let mx = 0.5
         let my = 0.5
@@ -575,6 +653,306 @@ function __OriginkitBase_LapisCourse(props: LapisCourseProps) {
         let ty = 0.5
         let over = 0
         let hov = 0
+
+        const common = (ctxGl: WebGL2RenderingContext, u: (name: string) => WebGLUniformLocation | null, p: LapisCourseProps) => {
+            if (!canvas) return
+            ctxGl.uniform2f(u("uRes"), canvas.width, canvas.height)
+            ctxGl.uniform1f(u("uTime"), clock)
+            ctxGl.uniform1f(u("uScale"), Math.max(10, Math.min(300, num(p.scale, 100))) / 100)
+            effectUniforms(ctxGl, u, p)
+        }
+
+        const renderSingleFrame = () => {
+            if (!gl || !wall || !field || !canvas || contextLost) return
+            if (canvas.width < 1 || canvas.height < 1 || fw < 1 || fh < 1) resize()
+            if (canvas.width < 1 || canvas.height < 1 || fw < 1 || fh < 1) return
+
+            const p = propsRef.current
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
+            gl.viewport(0, 0, fw, fh)
+            gl.useProgram(field.prog)
+            gl.uniform2f(field.u("uFieldRes"), fw, fh)
+            common(gl, field.u, p)
+            gl.drawArrays(gl.TRIANGLES, 0, 3)
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+            gl.viewport(0, 0, canvas.width, canvas.height)
+            gl.useProgram(wall.prog)
+            gl.activeTexture(gl.TEXTURE0)
+            gl.bindTexture(gl.TEXTURE_2D, fieldTex)
+            gl.uniform1i(wall.u("uField"), 0)
+            const bg = parseColor(p.background, [0.06, 0.07, 0.09, 1])
+            const base = parseColor(p.baseColor, [0.79, 0.8, 0.82, 1])
+            const acc = parseColor(p.accentColor, [1, 1, 1, 1])
+            gl.uniform2f(wall.u("uMouse"), mx, my)
+            gl.uniform1f(wall.u("uHover"), hov)
+            gl.uniform1f(wall.u("uSingleSample"), runtimeCfg.singleSample ? 1 : 0)
+            gl.uniform3f(wall.u("uBg"), bg[0], bg[1], bg[2])
+            gl.uniform3f(wall.u("uBase"), base[0], base[1], base[2])
+            gl.uniform3f(wall.u("uAccent"), acc[0], acc[1], acc[2])
+            common(gl, wall.u, p)
+            gl.drawArrays(gl.TRIANGLES, 0, 3)
+            hasRenderedStatic = true
+        }
+
+        const initGLResources = (targetGl: WebGL2RenderingContext): boolean => {
+            const nextWall = buildProgram(targetGl, FRAG)
+            const nextField = buildProgram(targetGl, FIELD)
+            if (!nextWall || !nextField) {
+                if (nextWall) targetGl.deleteProgram(nextWall.prog)
+                if (nextField) targetGl.deleteProgram(nextField.prog)
+                return false
+            }
+
+            const nextBuf = targetGl.createBuffer()
+            targetGl.bindBuffer(targetGl.ARRAY_BUFFER, nextBuf)
+            targetGl.bufferData(targetGl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), targetGl.STATIC_DRAW)
+            targetGl.enableVertexAttribArray(0)
+            targetGl.vertexAttribPointer(0, 2, targetGl.FLOAT, false, 0, 0)
+
+            const nextFieldTex = targetGl.createTexture()
+            targetGl.bindTexture(targetGl.TEXTURE_2D, nextFieldTex)
+            targetGl.texParameteri(targetGl.TEXTURE_2D, targetGl.TEXTURE_MIN_FILTER, targetGl.LINEAR)
+            targetGl.texParameteri(targetGl.TEXTURE_2D, targetGl.TEXTURE_MAG_FILTER, targetGl.LINEAR)
+            targetGl.texParameteri(targetGl.TEXTURE_2D, targetGl.TEXTURE_WRAP_S, targetGl.CLAMP_TO_EDGE)
+            targetGl.texParameteri(targetGl.TEXTURE_2D, targetGl.TEXTURE_WRAP_T, targetGl.CLAMP_TO_EDGE)
+            const nextFbo = targetGl.createFramebuffer()
+
+            wall = nextWall
+            field = nextField
+            buf = nextBuf
+            fieldTex = nextFieldTex
+            fbo = nextFbo
+            fw = 0
+            fh = 0
+            hasRenderedStatic = false
+            return true
+        }
+
+        const releaseGLObjects = () => {
+            if (!gl) return
+            try {
+                if (fbo) gl.deleteFramebuffer(fbo)
+                if (fieldTex) gl.deleteTexture(fieldTex)
+                if (buf) gl.deleteBuffer(buf)
+                if (wall) gl.deleteProgram(wall.prog)
+                if (field) gl.deleteProgram(field.prog)
+            } catch {
+                // Ignore cleanup errors if context is already lost
+            }
+            fbo = null
+            fieldTex = null
+            buf = null
+            wall = null
+            field = null
+            fw = 0
+            fh = 0
+        }
+
+        const stopLoop = () => {
+            if (raf !== 0) {
+                cancelAnimationFrame(raf)
+                raf = 0
+                last = -1
+            }
+            updateDomState()
+        }
+
+        const onContextLost = (e: Event) => {
+            e.preventDefault()
+            setHeavyAnimationWanted("lapis", false)
+            stopLoop()
+            if (intentionalTeardown) return
+            contextLost = true
+            setShowCssFallback(true)
+            updateDomState()
+        }
+
+        const onContextRestored = () => {
+            if (disposed || !gl || permanentFallback) return
+            contextLost = false
+            if (!initGLResources(gl)) {
+                triggerPermanentFallback()
+                return
+            }
+            setShowCssFallback(false)
+            resize()
+            renderSingleFrame()
+            syncState()
+        }
+
+        const teardownContext = (loseContext: boolean) => {
+            stopLoop()
+            const targetCanvas = canvas
+            const targetGl = gl
+            intentionalTeardown = true
+            releaseGLObjects()
+            if (loseContext && targetGl) {
+                try {
+                    targetGl.getExtension("WEBGL_lose_context")?.loseContext()
+                } catch {
+                    // Ignore extension errors
+                }
+            }
+            if (targetCanvas) {
+                targetCanvas.removeEventListener("webglcontextlost", onContextLost)
+                targetCanvas.removeEventListener("webglcontextrestored", onContextRestored)
+                targetCanvas.remove()
+            }
+            intentionalTeardown = false
+            canvas = null
+            gl = null
+            contextLost = false
+            hasRenderedStatic = false
+            updateDomState()
+        }
+
+        const triggerPermanentFallback = () => {
+            permanentFallback = true
+            setHeavyAnimationWanted("lapis", false)
+            teardownContext(true)
+            setShowCssFallback(true)
+            updateDomState()
+        }
+
+        const mountContext = () => {
+            if (disposed || permanentFallback || canvas) return
+            runtimeCfg = getLapisRuntimeConfig({ viewportWidth: window.innerWidth })
+            gov = {
+                avgDt: 1 / 60,
+                quality: runtimeCfg.initialQuality,
+                cooldown: 0.75,
+                calm: 0,
+                slowAtMinSeconds: 0,
+                shouldFallback: false,
+            }
+
+            const nextCanvas = document.createElement("canvas")
+            nextCanvas.setAttribute("data-testid", "lapis-webgl-canvas")
+            nextCanvas.style.position = "absolute"
+            nextCanvas.style.inset = "0"
+            nextCanvas.style.width = "100%"
+            nextCanvas.style.height = "100%"
+            nextCanvas.style.display = "block"
+            nextCanvas.style.pointerEvents = "none"
+            root.prepend(nextCanvas)
+
+            nextCanvas.addEventListener("webglcontextlost", onContextLost)
+            nextCanvas.addEventListener("webglcontextrestored", onContextRestored)
+
+            let nextGl: WebGL2RenderingContext | null = null
+            try {
+                nextGl = nextCanvas.getContext("webgl2", {
+                    alpha: false,
+                    antialias: false,
+                    depth: false,
+                    stencil: false,
+                })
+            } catch {
+                nextGl = null
+            }
+
+            if (!nextGl) {
+                nextCanvas.removeEventListener("webglcontextlost", onContextLost)
+                nextCanvas.removeEventListener("webglcontextrestored", onContextRestored)
+                nextCanvas.remove()
+                triggerPermanentFallback()
+                return
+            }
+
+            canvas = nextCanvas
+            gl = nextGl
+            contextLost = false
+
+            if (!initGLResources(nextGl)) {
+                triggerPermanentFallback()
+                return
+            }
+
+            resize()
+            renderSingleFrame()
+            updateDomState()
+        }
+
+        const isWanted = () =>
+            !disposed &&
+            !permanentFallback &&
+            !contextLost &&
+            !reduced &&
+            activeRef.current &&
+            isVisible &&
+            isTabVisible
+
+        const shouldRunLoop = () =>
+            isWanted() && getActiveHeavyAnimation() === "lapis" && Boolean(gl)
+
+        const frame = (now: number) => {
+            if (!shouldRunLoop()) {
+                raf = 0
+                last = -1
+                updateDomState()
+                return
+            }
+
+            const raw = last < 0 ? 1 / 60 : Math.min((now - last) / 1000, 0.25)
+            const dt = Math.min(raw, 1 / 20)
+            last = now
+
+            const govResult = stepQualityGovernor(gov, raw, runtimeCfg.minQuality)
+            gov = govResult.state
+            if (gov.shouldFallback) {
+                triggerPermanentFallback()
+                return
+            }
+            if (govResult.resized) {
+                resize()
+            }
+
+            const p = propsRef.current
+            clock = (clock + dt * (Math.max(0, Math.min(100, num(p.speed, 50))) / 50)) % 3600
+            const k = 1 - Math.exp(-dt * 14)
+            mx += (tx - mx) * k
+            my += (ty - my) * k
+            hov += (over - hov) * (1 - Math.exp(-dt * 6))
+
+            renderSingleFrame()
+            raf = requestAnimationFrame(frame)
+        }
+
+        const syncState = () => {
+            if (disposed) return
+
+            if (!activeRef.current) {
+                setHeavyAnimationWanted("lapis", false)
+                if (gl) teardownContext(true)
+                return
+            }
+
+            if (!permanentFallback && isNear && !gl) {
+                mountContext()
+            } else if (gl && !isNear && !isFar) {
+                setHeavyAnimationWanted("lapis", false)
+                teardownContext(true)
+                return
+            }
+
+            if (reduced && gl && !hasRenderedStatic && !contextLost) {
+                renderSingleFrame()
+            }
+
+            setHeavyAnimationWanted("lapis", isWanted())
+            if (shouldRunLoop()) {
+                if (raf === 0) {
+                    last = -1
+                    raf = requestAnimationFrame(frame)
+                }
+                updateDomState()
+            } else {
+                stopLoop()
+            }
+        }
+        syncCoordinatorRef.current = syncState
+
         const onMove = (e: PointerEvent) => {
             const r = root.getBoundingClientRect()
             if (r.width <= 0 || r.height <= 0) return
@@ -585,116 +963,118 @@ function __OriginkitBase_LapisCourse(props: LapisCourseProps) {
         const onLeave = () => {
             over = 0
         }
-        root.addEventListener("pointermove", onMove)
-        root.addEventListener("pointerdown", onMove)
+        root.addEventListener("pointermove", onMove, { passive: true })
+        root.addEventListener("pointerdown", onMove, { passive: true })
         root.addEventListener("pointerleave", onLeave)
         root.addEventListener("pointerup", onLeave)
 
-        const common = (u: (name: string) => WebGLUniformLocation | null, p: LapisCourseProps) => {
-            gl.uniform2f(u("uRes"), canvas.width, canvas.height)
-            gl.uniform1f(u("uTime"), clock)
-            gl.uniform1f(u("uScale"), Math.max(10, Math.min(300, num(p.scale, 100))) / 100)
-            effectUniforms(gl, u, p)
-        }
+        const ro = new ResizeObserver(() => {
+            resize()
+            if (reduced && gl && !contextLost) renderSingleFrame()
+        })
+        ro.observe(root)
 
-        let clock = 0
-        let raf = 0
-        let last = -1
-        let avgDt = 1 / 60
-        let calm = 0
-        let cooldown = 1
-        const frame = (now: number) => {
-            raf = requestAnimationFrame(frame)
-            const raw = last < 0 ? 1 / 60 : Math.min((now - last) / 1000, 0.25)
-            const dt = Math.min(raw, 1 / 20)
-            last = now
-
-            avgDt += (raw - avgDt) * 0.1
-            cooldown -= raw
-            if (cooldown <= 0) {
-                if (avgDt > SLOW_DT && quality > MIN_QUALITY) {
-                    quality = Math.max(MIN_QUALITY, quality * 0.8)
-                    cooldown = 0.75
-                    calm = 0
-                    resize()
-                } else if (avgDt < FAST_DT && quality < 1) {
-                    calm += raw
-                    if (calm > 3) {
-                        quality = Math.min(1, quality * 1.15)
-                        cooldown = 0.75
-                        calm = 0
-                        resize()
-                    }
-                } else calm = 0
-            }
-
-            const p = propsRef.current
-            clock = (clock + dt * (Math.max(0, Math.min(100, num(p.speed, 50))) / 50) * (reduced ? 0.25 : 1)) % 3600
-            const k = 1 - Math.exp(-dt * 14)
-            mx += (tx - mx) * k
-            my += (ty - my) * k
-            hov += (over - hov) * (1 - Math.exp(-dt * 6))
-
-            gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
-            gl.viewport(0, 0, fw, fh)
-            gl.useProgram(field.prog)
-            gl.uniform2f(field.u("uFieldRes"), fw, fh)
-            common(field.u, p)
-            gl.drawArrays(gl.TRIANGLES, 0, 3)
-
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-            gl.viewport(0, 0, canvas.width, canvas.height)
-            gl.useProgram(wall.prog)
-            gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, fieldTex)
-            gl.uniform1i(wall.u("uField"), 0)
-            const bg = parseColor(p.background, [0.06, 0.07, 0.09, 1]) // #101116
-            const base = parseColor(p.baseColor, [0.79, 0.8, 0.82, 1]) // #C9CBD2
-            const acc = parseColor(p.accentColor, [1, 1, 1, 1]) // #FFFFFF
-            gl.uniform2f(wall.u("uMouse"), mx, my)
-            gl.uniform1f(wall.u("uHover"), hov)
-            gl.uniform3f(wall.u("uBg"), bg[0], bg[1], bg[2])
-            gl.uniform3f(wall.u("uBase"), base[0], base[1], base[2])
-            gl.uniform3f(wall.u("uAccent"), acc[0], acc[1], acc[2])
-            common(wall.u, p)
-            gl.drawArrays(gl.TRIANGLES, 0, 3)
-        }
-
-        const start = () => {
-            if (raf) return
-            last = -1
-            raf = requestAnimationFrame(frame)
-        }
-        const stop = () => {
-            cancelAnimationFrame(raf)
-            raf = 0
-        }
-        const io =
+        const nearIo =
             typeof IntersectionObserver === "function"
-                ? new IntersectionObserver((entries) => (entries[entries.length - 1].isIntersecting ? start() : stop()))
+                ? new IntersectionObserver(
+                      (entries) => {
+                          const latest = entries[entries.length - 1]
+                          isNear = latest ? latest.isIntersecting : false
+                          syncState()
+                      },
+                      { rootMargin: "200px 0px", threshold: 0 }
+                  )
                 : null
-        if (io) io.observe(root)
-        start()
+
+        const farIo =
+            typeof IntersectionObserver === "function"
+                ? new IntersectionObserver(
+                      (entries) => {
+                          const latest = entries[entries.length - 1]
+                          isFar = latest ? latest.isIntersecting : false
+                          syncState()
+                      },
+                      { rootMargin: "420px 0px", threshold: 0 }
+                  )
+                : null
+
+        const visIo =
+            typeof IntersectionObserver === "function"
+                ? new IntersectionObserver(
+                      (entries) => {
+                          const latest = entries[entries.length - 1]
+                          isVisible = latest ? latest.isIntersecting : false
+                          syncState()
+                      },
+                      { rootMargin: "0px", threshold: 0 }
+                  )
+                : null
+
+        if (nearIo && farIo && visIo) {
+            nearIo.observe(root)
+            farIo.observe(root)
+            visIo.observe(root)
+        } else {
+            isNear = true
+            isFar = true
+            isVisible = true
+            syncState()
+        }
+
+        const unsubCoordinator = subscribeHeavyAnimationCoordinator(syncState)
+
+        const onVisibilityChange = () => {
+            isTabVisible = !document.hidden
+            syncState()
+        }
+        document.addEventListener("visibilitychange", onVisibilityChange)
+
+        updateDomState()
 
         return () => {
-            stop()
-            io?.disconnect()
+            disposed = true
+            syncCoordinatorRef.current = null
+            setHeavyAnimationWanted("lapis", false)
+            unsubCoordinator()
+            nearIo?.disconnect()
+            farIo?.disconnect()
+            visIo?.disconnect()
             ro.disconnect()
+            document.removeEventListener("visibilitychange", onVisibilityChange)
             root.removeEventListener("pointermove", onMove)
             root.removeEventListener("pointerdown", onMove)
             root.removeEventListener("pointerleave", onLeave)
             root.removeEventListener("pointerup", onLeave)
-            gl.deleteFramebuffer(fbo)
-            gl.deleteTexture(fieldTex)
-            gl.deleteBuffer(buf)
-            gl.deleteProgram(wall.prog)
-            gl.deleteProgram(field.prog)
+            teardownContext(true)
         }
     }, [])
 
     return (
-        <div ref={rootRef} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", background, ...style }}>
-            <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }} />
+        <div
+            ref={rootRef}
+            data-testid="lapis-course-background"
+            data-fallback={showCssFallback ? "true" : "false"}
+            style={{
+                position: "relative",
+                width: "100%",
+                height: "100%",
+                overflow: "hidden",
+                background,
+                ...style,
+            }}
+        >
+            {showCssFallback && (
+                <div
+                    aria-hidden="true"
+                    data-testid="lapis-css-fallback"
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        backgroundImage:
+                            "radial-gradient(circle at 24% 22%, rgba(255,255,255,0.22) 0%, transparent 46%), radial-gradient(circle at 78% 72%, rgba(212,175,55,0.24) 0%, transparent 52%), linear-gradient(135deg, #101116 0%, #343640 38%, #5e616e 56%, #23252c 78%, #101116 100%)",
+                    }}
+                />
+            )}
         </div>
     )
 }
@@ -741,6 +1121,7 @@ export interface LapisCourseProps extends EffectProps {
     accentColor?: string
     speed?: number
     scale?: number
+    active?: boolean
     style?: CSSProperties
 }
 
