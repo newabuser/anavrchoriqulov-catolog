@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CHLADNI_DESKTOP_PARTICLES,
+  CHLADNI_DESKTOP_WARMUP_STEPS,
   CHLADNI_MOBILE_PARTICLES,
+  CHLADNI_MOBILE_WARMUP_STEPS,
   getActiveHeavyAnimation,
   getChladniRuntimeConfig,
   getLapisRuntimeConfig,
@@ -14,13 +16,14 @@ import {
   stepQualityGovernor,
 } from './renderPerformance';
 
-test('getChladniRuntimeConfig adapts particle count, DPR cap, and FPS cap for mobile and low-core devices', () => {
+test('getChladniRuntimeConfig adapts particle count, DPR cap, FPS cap, and warm-up steps for mobile and low-core devices', () => {
   const desktop = getChladniRuntimeConfig({ viewportWidth: 1440, hardwareConcurrency: 8 });
   assert.deepEqual(desktop, {
     isConstrained: false,
     particleCount: CHLADNI_DESKTOP_PARTICLES,
     maxDpr: 2,
     maxFps: null,
+    warmupSteps: CHLADNI_DESKTOP_WARMUP_STEPS,
   });
 
   const mobile = getChladniRuntimeConfig({ viewportWidth: 390, hardwareConcurrency: 8 });
@@ -29,6 +32,7 @@ test('getChladniRuntimeConfig adapts particle count, DPR cap, and FPS cap for mo
     particleCount: CHLADNI_MOBILE_PARTICLES,
     maxDpr: 1.5,
     maxFps: 30,
+    warmupSteps: CHLADNI_MOBILE_WARMUP_STEPS,
   });
 
   const lowCoreDesktop = getChladniRuntimeConfig({ viewportWidth: 1440, hardwareConcurrency: 4 });
@@ -37,6 +41,7 @@ test('getChladniRuntimeConfig adapts particle count, DPR cap, and FPS cap for mo
     particleCount: CHLADNI_MOBILE_PARTICLES,
     maxDpr: 1.5,
     maxFps: 30,
+    warmupSteps: CHLADNI_DESKTOP_WARMUP_STEPS,
   });
 });
 

@@ -60,7 +60,7 @@ export function BackToTopButton({
               ? { duration: 0.01 }
               : { duration: 0.28, ease: [0.16, 1, 0.3, 1] }
           }
-          className="group fixed right-5 bottom-6 z-30 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] text-[#222222] shadow-[0_12px_32px_rgba(0,0,0,0.08)] backdrop-blur-xl transition-colors duration-200 hover:border-[#C62828] hover:bg-[#C62828] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C62828] sm:right-8 sm:bottom-8"
+          className="group fixed right-5 bottom-6 z-30 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--fg)] shadow-[var(--shadow-elevated)] backdrop-blur-xl transition-colors duration-200 hover:border-[#C62828] hover:bg-[#C62828] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C62828] sm:right-8 sm:bottom-8"
         >
           <ArrowUp
             aria-hidden="true"

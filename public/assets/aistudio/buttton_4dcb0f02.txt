@@ -1,0 +1,4 @@
+<button onClick={(e) => {
+  const r = e.currentTarget.getBoundingClientRect()
+  toggleTheme({ x: r.left + r.width / 2, y: r.top + r.height / 2 })
+}}>☾ / ☀</button>

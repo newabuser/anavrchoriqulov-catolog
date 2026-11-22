@@ -3,6 +3,7 @@ export interface ChladniRuntimeConfig {
   particleCount: number;
   maxDpr: number;
   maxFps: number | null;
+  warmupSteps: number;
 }
 
 export interface LapisRuntimeConfig {
@@ -25,6 +26,9 @@ export interface QualityGovernorState {
 
 export const CHLADNI_DESKTOP_PARTICLES = 12000;
 export const CHLADNI_MOBILE_PARTICLES = 3500;
+export const CHLADNI_DESKTOP_WARMUP_STEPS = 90;
+export const CHLADNI_MOBILE_WARMUP_STEPS = 40;
+export const CHLADNI_WARMUP_DT = 1 / 30;
 export const MOBILE_BREAKPOINT_PX = 768;
 
 export const LAPIS_DESKTOP_MAX_PIXELS = 2_000_000;
@@ -57,11 +61,13 @@ export function getChladniRuntimeConfig({
   hardwareConcurrency?: number;
 }): ChladniRuntimeConfig {
   const isConstrained = isConstrainedChladniDevice(viewportWidth, hardwareConcurrency);
+  const isNarrow = viewportWidth > 0 && viewportWidth < MOBILE_BREAKPOINT_PX;
   return {
     isConstrained,
     particleCount: isConstrained ? CHLADNI_MOBILE_PARTICLES : CHLADNI_DESKTOP_PARTICLES,
     maxDpr: isConstrained ? 1.5 : 2,
     maxFps: isConstrained ? 30 : null,
+    warmupSteps: isNarrow ? CHLADNI_MOBILE_WARMUP_STEPS : CHLADNI_DESKTOP_WARMUP_STEPS,
   };
 }
 

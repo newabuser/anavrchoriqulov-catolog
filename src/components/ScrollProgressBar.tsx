@@ -62,7 +62,7 @@ export function ScrollProgressBar({ visible, layoutKey }: ScrollProgressBarProps
       aria-hidden="true"
       data-testid="scroll-progress-bar"
       data-progress={progress.toFixed(3)}
-      className="pointer-events-none fixed top-0 right-0 left-0 z-50 h-[2px] bg-white/5"
+      className="pointer-events-none fixed top-0 right-0 left-0 z-50 h-[2px] bg-[var(--border)]/35"
     >
       <div
         className="h-full w-full origin-left bg-[#c81018] transition-transform duration-75 ease-out will-change-transform"

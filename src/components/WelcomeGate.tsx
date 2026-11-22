@@ -92,15 +92,25 @@ export function WelcomeGate({ isEntered, onEnter }: WelcomeGateProps) {
 
   const [portraitLoaded, setPortraitLoaded] = useState(false);
 
+  useEffect(() => {
+    if (isEntered || typeof window === 'undefined') return;
+    const preload = new Image();
+    preload.crossOrigin = 'anonymous';
+    preload.src = ARTIST_PROFILE.heroImageUrl;
+    if ('fonts' in document) {
+      document.fonts.load('400 26px "CaskoLuxuryDemo-Regular"').catch(() => {});
+    }
+  }, [isEntered]);
+
   return (
     <section
       aria-label="Welcome entrance"
       aria-hidden={isEntered}
       data-testid="welcome-gate"
-      className={`fixed inset-0 z-50 flex h-[100svh] min-h-[100svh] w-full items-center justify-center overflow-hidden bg-[#080808] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+      className={`fixed inset-0 z-50 flex h-[100svh] min-h-[100svh] w-full items-center justify-center overflow-hidden bg-[#080808] ${
         isEntered
-          ? '-translate-y-full opacity-0 pointer-events-none invisible'
-          : 'translate-y-0 opacity-100 visible'
+          ? 'opacity-0 pointer-events-none invisible'
+          : 'opacity-100 visible transition-opacity duration-500 ease-out'
       }`}
     >
       {/* Monochrome Backdrop with Initial Portrait Reveal & Scroll Parallax (swap heroImageUrl in src/data/portfolioData.ts) */}
@@ -118,6 +128,7 @@ export function WelcomeGate({ isEntered, onEnter }: WelcomeGateProps) {
           <motion.img
             src={ARTIST_PROFILE.heroImageUrl}
             alt={ARTIST_PROFILE.heroImageAlt}
+            crossOrigin="anonymous"
             referrerPolicy="no-referrer"
             onLoad={() => setPortraitLoaded(true)}
             onError={() => setImageError(true)}

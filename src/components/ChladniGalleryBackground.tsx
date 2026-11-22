@@ -3,9 +3,10 @@
 
 "use client"
 
-import { useEffect, useRef, type CSSProperties } from "react"
+import { useEffect, useLayoutEffect, useRef, type CSSProperties } from "react"
 import {
     CHLADNI_DESKTOP_PARTICLES,
+    CHLADNI_WARMUP_DT,
     getActiveHeavyAnimation,
     getChladniRuntimeConfig,
     setHeavyAnimationWanted,
@@ -180,8 +181,10 @@ export function ChladniGalleryBackground({
     }
 
     const syncRunningRef = useRef<(() => void) | null>(null)
+    const redrawFrameRef = useRef<(() => void) | null>(null)
 
-    useEffect(() => {
+    useLayoutEffect(() => {
+        redrawFrameRef.current?.()
         syncRunningRef.current?.()
     }, [active, sand, plate])
 
@@ -348,6 +351,10 @@ export function ChladniGalleryBackground({
                     for (let i = 0; i < CT_MAX_N; i++) X[i] *= s
                     aspect = na
                 }
+            }
+            const rect = root.getBoundingClientRect()
+            if (rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight) {
+                isIntersecting = true
             }
             syncAttributes(raf !== 0)
         }
@@ -603,12 +610,40 @@ export function ChladniGalleryBackground({
             return totalT - dt + (s + 1) * (dt / steps)
         }
 
+        let warmedUp = false
+        const runWarmup = () => {
+            if (warmedUp || W < 2 || H < 2) return
+            warmedUp = true
+            const warmupSteps = runtimeConfig.warmupSteps
+            const warmupDt = CHLADNI_WARMUP_DT
+            const patternInterval = Math.max(0.5, optsRef.current.minTime)
+            const useMulti = optsRef.current.multiplePatterns
+            const morphStart = 0.68
+            for (let k = 0; k < warmupSteps; k++) {
+                t += warmupDt
+                const patternCycle = Math.floor(t / patternInterval)
+                const cycleT = t - patternCycle * patternInterval
+                const progress = cycleT / patternInterval
+                const orderIndex = patternCycle % CT_PATTERN_ORDER.length
+                const patternIndex = useMulti ? CT_PATTERN_ORDER[orderIndex] : 0
+                const nextPatternIndex = useMulti
+                    ? CT_PATTERN_ORDER[(orderIndex + 1) % CT_PATTERN_ORDER.length]
+                    : 0
+                const morphT = Math.max(0, Math.min(1, (progress - morphStart) / (1 - morphStart)))
+                const morph = morphT * morphT * (3 - 2 * morphT)
+                simulate(warmupDt, progress, patternIndex, morph, nextPatternIndex, t)
+            }
+            drawFrame(0)
+        }
+
         const isWanted = () =>
             !disposed &&
             !reducedMotion &&
             optsRef.current.active &&
             isIntersecting &&
-            isTabVisible
+            isTabVisible &&
+            W >= 2 &&
+            H >= 2
 
         const shouldRun = () =>
             isWanted() && getActiveHeavyAnimation() === "chladni"
@@ -648,19 +683,25 @@ export function ChladniGalleryBackground({
             }
         }
         syncRunningRef.current = syncRunning
+        redrawFrameRef.current = () => {
+            if (W >= 2 && H >= 2) {
+                drawFrame(0)
+            }
+            syncAttributes(raf !== 0)
+        }
 
         resize()
-
-        // Draw one initial settled frame if reduced motion is requested
-        if (reducedMotion) {
-            for (let k = 0; k < 24; k++) simulate(1 / 55, 0.35, 0, 0, 0, k / 55)
-            drawFrame(0)
-            syncAttributes(false)
-        }
+        runWarmup()
+        syncAttributes(false)
 
         const ro = new ResizeObserver(() => {
             resize()
-            if (reducedMotion) drawFrame(0)
+            if (!warmedUp && W >= 2 && H >= 2) {
+                runWarmup()
+            } else if (reducedMotion && W >= 2 && H >= 2) {
+                drawFrame(0)
+            }
+            syncRunning()
         })
         ro.observe(root)
 
@@ -690,6 +731,7 @@ export function ChladniGalleryBackground({
         return () => {
             disposed = true
             syncRunningRef.current = null
+            redrawFrameRef.current = null
             setHeavyAnimationWanted("chladni", false)
             unsubCoordinator()
             if (raf !== 0) cancelAnimationFrame(raf)

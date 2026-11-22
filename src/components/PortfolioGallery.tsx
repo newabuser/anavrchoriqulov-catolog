@@ -11,6 +11,7 @@ import {
 import { PortfolioCategoryHeader } from './PortfolioCategoryHeader';
 import { useLanguage } from '../context/LanguageContext';
 import { ChladniGalleryBackground } from './ChladniGalleryBackground';
+import { getChladniThemeColors, useTheme } from '../utils/useTheme';
 
 interface PortfolioGalleryProps {
   artworks: Artwork[];
@@ -18,7 +19,9 @@ interface PortfolioGalleryProps {
   activeCategory?: ArtworkCategory;
   searchQuery?: string;
   isEntered?: boolean;
+  isTransitioning?: boolean;
   isLoading?: boolean;
+  titleVisible?: boolean;
   onSelectCategory?: (category: ArtworkCategory) => void;
   onSearchChange?: (query: string) => void;
   onOpenArtwork: (artwork: Artwork) => void;
@@ -73,20 +76,20 @@ function MasonrySkeletonGrid({
             <div
               key={`skeleton-${colIdx}-${itemIdx}`}
               aria-hidden="true"
-              className="rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] p-3 shadow-[0_4px_20px_rgba(0,0,0,0.03)] sm:p-3.5"
+              className="rounded-xl border border-[var(--border)] bg-[var(--card-bg)] p-3 shadow-[var(--shadow-card)] sm:p-3.5"
             >
-              <div className={`relative w-full overflow-hidden rounded-lg bg-[#F1F2F4] ${aspectClass}`}>
-                <div className="gallery-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
+              <div className={`relative w-full overflow-hidden rounded-lg bg-[var(--bg-subtle)] ${aspectClass}`}>
+                <div className="gallery-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-[var(--fg)]/[0.05] to-transparent" />
               </div>
               <div className="mt-3.5 flex items-center justify-between gap-4 px-0.5">
-                <div className="relative h-3.5 w-2/3 overflow-hidden bg-[#E5E7EB]">
-                  <div className="gallery-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
+                <div className="relative h-3.5 w-2/3 overflow-hidden bg-[var(--border)]">
+                  <div className="gallery-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-[var(--fg)]/[0.05] to-transparent" />
                 </div>
-                <div className="h-3 w-12 shrink-0 bg-[#E5E7EB]" />
+                <div className="h-3 w-12 shrink-0 bg-[var(--border)]" />
               </div>
               <div className="mt-2 flex items-center gap-2 px-0.5">
-                <div className="h-2.5 w-20 bg-[#E5E7EB]" />
-                <div className="h-2.5 w-24 bg-[#E5E7EB]/60" />
+                <div className="h-2.5 w-20 bg-[var(--border)]" />
+                <div className="h-2.5 w-24 bg-[var(--border)]/60" />
               </div>
             </div>
           ))}
@@ -127,17 +130,17 @@ const GalleryCard = memo(function GalleryCard({
         type="button"
         onClick={() => onOpen(artwork)}
         aria-label={`${t.portfolio.inspectArtwork}: ${artwork.title} (${artwork.medium}, ${artwork.year})`}
-        className="group block w-full rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] p-3 text-left shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-[border-color,box-shadow,background-color] duration-300 hover:border-[#C62828]/60 hover:bg-[#FFFFFF] hover:shadow-[0_16px_40px_rgba(0,0,0,0.08)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C62828] sm:p-3.5"
+        className="group block w-full rounded-xl border border-[var(--border)] bg-[var(--card-bg)] p-3 text-left shadow-[var(--shadow-card)] transition-[border-color,box-shadow,background-color] duration-300 hover:border-[#C62828]/60 hover:bg-[var(--card-bg)] hover:shadow-[var(--shadow-card-hover)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C62828] sm:p-3.5"
       >
         {/* Exact-Proportion Museum Artwork Canvas */}
-        <div className="relative overflow-hidden rounded-lg bg-[#F1F2F4]">
+        <div className="relative overflow-hidden rounded-lg bg-[var(--bg-subtle)]">
           {!isLoaded && !hasError && (
             <div
               aria-hidden="true"
               data-testid="card-image-skeleton"
-              className="absolute inset-0 z-10 bg-[#E5E7EB]"
+              className="absolute inset-0 z-10 bg-[var(--border)]"
             >
-              <div className="gallery-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
+              <div className="gallery-shimmer absolute inset-0 bg-gradient-to-r from-transparent via-[var(--fg)]/[0.05] to-transparent" />
             </div>
           )}
 
@@ -159,8 +162,8 @@ const GalleryCard = memo(function GalleryCard({
               }`}
             />
           ) : (
-            <div className="flex aspect-[4/3] w-full flex-col items-center justify-center bg-[#E5E7EB] p-4 text-center">
-              <span className="font-display text-[11px] uppercase tracking-[0.2em] text-[#555555]">
+            <div className="flex aspect-[4/3] w-full flex-col items-center justify-center bg-[var(--border)] p-4 text-center">
+              <span className="font-display text-[11px] uppercase tracking-[0.2em] text-[var(--fg-muted)]">
                 {artwork.title}
               </span>
             </div>
@@ -182,28 +185,28 @@ const GalleryCard = memo(function GalleryCard({
 
         {/* Museum Wall Plaque Metadata */}
         <div className="mt-3.5 flex items-baseline justify-between gap-3 px-0.5">
-          <h3 className="font-display text-sm font-normal tracking-[0.04em] text-[#222222] transition-colors group-hover:text-[#C62828] sm:text-[15px]">
+          <h3 className="font-display text-sm font-normal tracking-[0.04em] text-[var(--fg)] transition-colors group-hover:text-[var(--accent-text)] sm:text-[15px]">
             {artwork.title}
           </h3>
           {displayPrice ? (
-            <span className="shrink-0 font-display text-xs font-light tabular-nums tracking-[0.1em] text-[#222222]">
+            <span className="shrink-0 font-display text-xs font-light tabular-nums tracking-[0.1em] text-[var(--fg)]">
               {displayPrice}
             </span>
           ) : (
-            <span className="shrink-0 text-xs tabular-nums tracking-[0.1em] text-[#555555]">
+            <span className="shrink-0 text-xs tabular-nums tracking-[0.1em] text-[var(--fg-muted)]">
               {artwork.year}
             </span>
           )}
         </div>
 
-        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 px-0.5 text-[11px] text-[#555555] sm:text-xs">
-          <span className="tabular-nums tracking-[0.04em] text-[#222222]">
+        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 px-0.5 text-[11px] text-[var(--fg-muted)] sm:text-xs">
+          <span className="tabular-nums tracking-[0.04em] text-[var(--fg)]">
             {artwork.dimensions}
           </span>
           <span aria-hidden="true">·</span>
           <span className="truncate">{artwork.medium}</span>
           <span aria-hidden="true">·</span>
-          <span className="tabular-nums text-[#555555]">{artwork.year}</span>
+          <span className="tabular-nums text-[var(--fg-muted)]">{artwork.year}</span>
         </div>
       </button>
     </article>
@@ -265,10 +268,13 @@ export function PortfolioGallery({
   searchQuery,
   isEntered = true,
   isLoading = false,
+  titleVisible = true,
   onSearchChange,
   onOpenArtwork,
 }: PortfolioGalleryProps) {
   const { t } = useLanguage();
+  const theme = useTheme();
+  const chladniColors = getChladniThemeColors(theme);
   const [internalQuery, setInternalQuery] = useState('');
   const viewportWidth = useResponsiveViewportWidth();
 
@@ -332,22 +338,22 @@ export function PortfolioGallery({
         >
           <ChladniGalleryBackground
             active={isEntered}
-            sand="#D20000"
-            plate="#FFFFFF"
+            sand={chladniColors.sand}
+            plate={chladniColors.plate}
           />
         </div>
       </div>
 
       <div className="relative z-10 mx-auto max-w-[1360px]">
         {/* Section Heading */}
-        <PortfolioCategoryHeader />
+        <PortfolioCategoryHeader titleVisible={titleVisible} />
 
         {/* Liquid-Glass Catalogue Search Bar */}
         <div className="mx-auto mt-9 max-w-xl">
-          <div className="relative flex items-center rounded-xl border border-[#E5E7EB] bg-[#F8F9FA]/95 px-4 py-1 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-[#C62828] focus-within:bg-[#FFFFFF] focus-within:shadow-[0_0_20px_rgba(198,40,40,0.12),0_8px_24px_rgba(0,0,0,0.06)]">
+          <div className="relative flex items-center rounded-xl border border-[var(--border)] bg-[var(--search-bg)] px-4 py-1 backdrop-blur-xl shadow-[var(--shadow-card)] transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-[#C62828] focus-within:bg-[var(--card-bg)] focus-within:shadow-[0_0_20px_rgba(198,40,40,0.12),0_8px_24px_rgba(0,0,0,0.12)]">
             <Search
               aria-hidden="true"
-              className="h-4 w-4 shrink-0 text-[#555555]"
+              className="h-4 w-4 shrink-0 text-[var(--fg-muted)]"
             />
             <label htmlFor="gallery-search-input" className="sr-only">
               {t.portfolio.searchLabel}
@@ -360,13 +366,13 @@ export function PortfolioGallery({
               onChange={(event) => handleQueryChange(event.target.value)}
               placeholder={t.portfolio.searchPlaceholder}
               aria-label={t.portfolio.searchLabel}
-              className="min-h-[40px] w-full bg-transparent px-3 font-sans text-sm text-[#222222] placeholder:text-[#6B7280] focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+              className="min-h-[40px] w-full bg-transparent px-3 font-sans text-sm text-[var(--fg)] placeholder:text-[var(--fg-subtle)] focus:outline-none [&::-webkit-search-cancel-button]:hidden"
             />
             {isSearchActive && (
               <div className="flex shrink-0 items-center gap-2">
                 <span
                   data-testid="gallery-search-count"
-                  className="font-display text-[11px] tabular-nums tracking-[0.14em] text-[#555555]"
+                  className="font-display text-[11px] tabular-nums tracking-[0.14em] text-[var(--fg-muted)]"
                 >
                   {filteredArtworks.length} / {availableArtworks.length}
                 </span>
@@ -375,7 +381,7 @@ export function PortfolioGallery({
                   data-testid="gallery-search-clear"
                   onClick={() => handleQueryChange('')}
                   aria-label={t.portfolio.clearSearch}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E5E7EB] bg-[#FFFFFF] text-[#222222] transition-colors hover:border-[#C62828] hover:bg-[#C62828] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card-bg)] text-[var(--fg)] transition-colors hover:border-[#C62828] hover:bg-[#C62828] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -416,14 +422,14 @@ export function PortfolioGallery({
         ) : (
           <div
             data-testid="gallery-empty-state"
-            className="relative mt-14 overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#F8F9FA] px-6 py-16 text-center shadow-[0_12px_40px_rgba(0,0,0,0.06)] sm:px-12 sm:py-20"
+            className="relative mt-14 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] px-6 py-16 text-center shadow-[var(--shadow-elevated)] sm:px-12 sm:py-20"
           >
             <div className="relative z-10 mx-auto max-w-xl">
-              <p className="font-display text-[11px] font-normal uppercase tracking-[0.34em] text-[#C62828]">
+              <p className="font-display text-[11px] font-normal uppercase tracking-[0.34em] text-[var(--accent-text)]">
                 {t.portfolio.curatorialArchive}
               </p>
 
-              <h2 className="mt-4 font-mauline text-2xl font-normal uppercase tracking-[0.16em] text-[#222222] sm:text-3xl [text-wrap:balance]">
+              <h2 className="mt-4 font-mauline text-2xl font-normal uppercase tracking-[0.16em] text-[var(--fg)] sm:text-3xl [text-wrap:balance]">
                 {isSearchActive
                   ? t.portfolio.searchEmptyHeading
                   : t.portfolio.emptyHeadingAll}
@@ -431,10 +437,10 @@ export function PortfolioGallery({
 
               <div
                 aria-hidden="true"
-                className="mx-auto mt-5 h-px w-12 bg-gradient-to-r from-transparent via-[#E5E7EB] to-transparent"
+                className="mx-auto mt-5 h-px w-12 bg-gradient-to-r from-transparent via-[var(--border)] to-transparent"
               />
 
-              <p className="mt-5 text-sm leading-relaxed text-[#555555] sm:text-[15px]">
+              <p className="mt-5 text-sm leading-relaxed text-[var(--fg-muted)] sm:text-[15px]">
                 {isSearchActive
                   ? t.portfolio.searchEmptyDescription
                   : t.portfolio.emptyDescription}
@@ -445,7 +451,7 @@ export function PortfolioGallery({
                   <button
                     type="button"
                     onClick={() => handleQueryChange('')}
-                    className="inline-flex min-h-[44px] items-center justify-center border border-[#E5E7EB] bg-[#FFFFFF] px-6 py-2.5 font-display text-xs uppercase tracking-[0.22em] text-[#222222] transition-colors duration-200 hover:border-[#C62828] hover:text-[#C62828] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
+                    className="inline-flex min-h-[44px] items-center justify-center border border-[var(--border)] bg-[var(--card-bg)] px-6 py-2.5 font-display text-xs uppercase tracking-[0.22em] text-[var(--fg)] transition-colors duration-200 hover:border-[#C62828] hover:text-[var(--accent-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
                   >
                     {t.portfolio.clearSearch}
                   </button>

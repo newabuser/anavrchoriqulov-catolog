@@ -38,7 +38,7 @@
   --font-display: "Raleway", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-bodoni: "Bodoni Moda", Georgia, "Times New Roman", serif;
-  --font-casko: "CaskoLuxuryDemo-Regular", "Bodoni Moda", Georgia, serif;
+  --font-casko: "CaskoLuxuryDemo-Regular", "Cormorant Garamond", "Bodoni Moda", serif;
   --font-mauline: "Mauline", "Bodoni Moda", Georgia, serif;
   --color-obsidian: #050505;
   --color-charcoal: #111111;
@@ -46,6 +46,87 @@
   --color-alabaster: #eaeaea;
   --color-crimson-deep: #8b0000;
   --color-crimson: #c00020;
+}
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #FFFFFF;
+  --bg-elevated: #F8F9FA;
+  --bg-subtle: #F1F2F4;
+  --fg: #222222;
+  --fg-strong: #111111;
+  --fg-muted: #555555;
+  --fg-subtle: #6B7280;
+  --card-bg: #FFFFFF;
+  --border: #E5E7EB;
+  --border-hover: #D1D5DB;
+  --accent: #C62828;
+  --accent-hover: #df1d25;
+  --accent-text: #C62828;
+  --nav-bg: rgba(255, 255, 255, 0.8);
+  --nav-bg-scrolled: rgba(255, 255, 255, 0.92);
+  --mobile-menu-bg: rgba(255, 255, 255, 0.98);
+  --search-bg: rgba(248, 249, 250, 0.95);
+  --input-bg: #F8F9FA;
+  --input-bg-focus: #FFFFFF;
+  --btn-primary-bg: #222222;
+  --btn-primary-fg: #FFFFFF;
+  --contact-overlay: rgba(255, 255, 255, 0.45);
+  --modal-backdrop: rgba(34, 34, 34, 0.6);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 16px 40px rgba(0, 0, 0, 0.08);
+  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --shadow-dropdown: 0 20px 50px rgba(0, 0, 0, 0.12);
+  --shadow-modal: 0 24px 80px rgba(0, 0, 0, 0.15);
+  --ornament-filter: brightness(0);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a0a0a;
+  --bg-elevated: #131313;
+  --bg-subtle: #1A1A1A;
+  --fg: #f2f2f2;
+  --fg-strong: #ffffff;
+  --fg-muted: #a3a3a3;
+  --fg-subtle: #8e8e93;
+  --card-bg: #131313;
+  --border: #262626;
+  --border-hover: #3a3a3a;
+  --accent: #C62828;
+  --accent-hover: #df1d25;
+  --accent-text: #EF5350;
+  --nav-bg: rgba(10, 10, 10, 0.8);
+  --nav-bg-scrolled: rgba(10, 10, 10, 0.92);
+  --mobile-menu-bg: rgba(10, 10, 10, 0.98);
+  --search-bg: rgba(19, 19, 19, 0.94);
+  --input-bg: #181818;
+  --input-bg-focus: #1f1f1f;
+  --btn-primary-bg: #f2f2f2;
+  --btn-primary-fg: #0a0a0a;
+  --contact-overlay: rgba(10, 10, 10, 0.58);
+  --modal-backdrop: rgba(0, 0, 0, 0.78);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --shadow-card-hover: 0 16px 40px rgba(0, 0, 0, 0.72);
+  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --shadow-dropdown: 0 20px 50px rgba(0, 0, 0, 0.78);
+  --shadow-modal: 0 24px 80px rgba(0, 0, 0, 0.8);
+  --ornament-filter: brightness(0) invert(1);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
 }
 
 .wordmark-lockup {
@@ -265,8 +346,8 @@
 
 @layer base {
   html {
-    background-color: #FFFFFF;
-    color: #222222;
+    background-color: var(--bg);
+    color: var(--fg);
     font-family: var(--font-sans);
   }
 
@@ -415,8 +496,8 @@
   letter-spacing: 0.46em;
   padding-left: 0.46em;
   text-transform: uppercase;
-  color: #222222;
-  text-wrap: balance;
+  color: var(--fg);
+  white-space: nowrap;
 }
 
 .portfolio-category-subtitle {
@@ -426,7 +507,7 @@
   font-weight: 300;
   line-height: 1.5;
   letter-spacing: 0.24em;
-  color: #555555;
+  color: var(--fg-muted);
 }
 
 .portfolio-ornament-divider {
@@ -444,7 +525,7 @@
   object-position: 50% 54.5%;
   pointer-events: none;
   user-select: none;
-  filter: brightness(0);
+  filter: var(--ornament-filter);
 }
 
 @media (min-width: 640px) {

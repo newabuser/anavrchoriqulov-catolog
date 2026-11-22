@@ -9,12 +9,14 @@ import LapisCourse from './LapisCourse';
 interface ContactSectionProps {
   prefilledSubject?: string;
   isEntered?: boolean;
+  isTransitioning?: boolean;
   onReplayEntrance?: () => void;
 }
 
 export function ContactSection({
   prefilledSubject = '',
   isEntered = true,
+  isTransitioning = false,
   onReplayEntrance,
 }: ContactSectionProps) {
   const { t } = useLanguage();
@@ -76,64 +78,66 @@ export function ContactSection({
     <footer
       id="contact"
       aria-labelledby="contact-heading"
-      className="relative scroll-mt-16 overflow-hidden border-t border-[#E5E7EB] px-5 pt-24 pb-12 sm:px-8 lg:pt-30"
+      className="relative scroll-mt-16 overflow-hidden border-t border-[var(--border)] px-5 pt-24 pb-12 sm:px-8 lg:pt-30"
     >
-      {/* Background LapisCourse WebGL Animation */}
+      {/* Background LapisCourse WebGL Animation (deferred until transition finishes) */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-85">
-        <LapisCourse speed={35} scale={180} active={isEntered} />
+        {isEntered && !isTransitioning && (
+          <LapisCourse speed={35} scale={180} active={isEntered && !isTransitioning} />
+        )}
       </div>
-      <div className="absolute inset-0 z-0 bg-white/45 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 z-0 bg-[var(--contact-overlay)] backdrop-blur-[2px]" />
 
       <div className="relative z-10 mx-auto max-w-[1360px]">
         <div className="grid grid-cols-1 gap-14 lg:grid-cols-12 lg:gap-16">
           {/* Studio Contact Details */}
           <div className="lg:col-span-5">
-            <p className="font-display text-xs font-normal uppercase tracking-[0.36em] text-[#C62828]">
+            <p className="font-display text-xs font-normal uppercase tracking-[0.36em] text-[var(--accent-text)]">
               {t.contact.sectionLabel}
             </p>
             <h2
               id="contact-heading"
-              className="mt-3 font-mauline text-3xl font-normal uppercase tracking-[0.24em] text-[#222222] sm:text-4xl [text-wrap:balance]"
+              className="mt-3 font-mauline text-3xl font-normal uppercase tracking-[0.24em] text-[var(--fg)] sm:text-4xl [text-wrap:balance]"
             >
               {t.contact.heading}
             </h2>
 
-            <p className="mt-6 max-w-md text-sm leading-relaxed text-[#555555] sm:text-[15px]">
+            <p className="mt-6 max-w-md text-sm leading-relaxed text-[var(--fg-muted)] sm:text-[15px]">
               {t.contact.lead}
             </p>
 
-            <dl className="mt-10 divide-y divide-[#E5E7EB] border-y border-[#E5E7EB] text-sm">
+            <dl className="mt-10 divide-y divide-[var(--border)] border-y border-[var(--border)] text-sm">
               <div className="py-4">
-                <dt className="font-display text-xs uppercase tracking-[0.22em] text-[#555555]">
+                <dt className="font-display text-xs uppercase tracking-[0.22em] text-[var(--fg-muted)]">
                   {t.contact.directCorrespondence}
                 </dt>
-                <dd className="mt-1.5 text-[#222222]">
+                <dd className="mt-1.5 text-[var(--fg)]">
                   <a
                     href={`mailto:${ARTIST_PROFILE.contactEmail}`}
-                    className="transition-colors duration-200 hover:text-[#C62828] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
+                    className="transition-colors duration-200 hover:text-[var(--accent-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
                   >
                     {ARTIST_PROFILE.contactEmail}
                   </a>
                 </dd>
               </div>
               <div className="py-4">
-                <dt className="font-display text-xs uppercase tracking-[0.22em] text-[#555555]">
+                <dt className="font-display text-xs uppercase tracking-[0.22em] text-[var(--fg-muted)]">
                   Phone / Telefon
                 </dt>
-                <dd className="mt-1.5 text-[#222222]">
+                <dd className="mt-1.5 text-[var(--fg)]">
                   <a
                     href="tel:+998906145294"
-                    className="transition-colors duration-200 hover:text-[#C62828] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
+                    className="transition-colors duration-200 hover:text-[var(--accent-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
                   >
                     +998(90)-614-52-94
                   </a>
                 </dd>
               </div>
               <div className="py-4">
-                <dt className="font-display text-xs uppercase tracking-[0.22em] text-[#555555]">
+                <dt className="font-display text-xs uppercase tracking-[0.22em] text-[var(--fg-muted)]">
                   {t.contact.representation}
                 </dt>
-                <dd className="mt-1.5 text-[#222222]">
+                <dd className="mt-1.5 text-[var(--fg)]">
                   {t.contact.representationValue}
                 </dd>
               </div>
@@ -146,10 +150,10 @@ export function ContactSection({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram Profile"
-                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-[#C62828] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
+                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--card-bg)] shadow-[var(--shadow-card)] transition-all duration-300 hover:border-[#C62828] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
               >
                 <svg
-                  className="relative h-5 w-5 text-[#222222] transition-colors duration-300 group-hover:text-[#C62828]"
+                  className="relative h-5 w-5 text-[var(--fg)] transition-colors duration-300 group-hover:text-[var(--accent-text)]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -169,10 +173,10 @@ export function ContactSection({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Telegram Channel"
-                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-[#C62828] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
+                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--card-bg)] shadow-[var(--shadow-card)] transition-all duration-300 hover:border-[#C62828] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
               >
                 <svg
-                  className="relative h-5 w-5 text-[#222222] transition-colors duration-300 group-hover:text-[#C62828]"
+                  className="relative h-5 w-5 text-[var(--fg)] transition-colors duration-300 group-hover:text-[var(--accent-text)]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -189,10 +193,10 @@ export function ContactSection({
               <a
                 href="mailto:artistchoriqulov@gmail.com"
                 aria-label="Email Studio"
-                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-[#C62828] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
+                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--card-bg)] shadow-[var(--shadow-card)] transition-all duration-300 hover:border-[#C62828] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
               >
                 <svg
-                  className="relative h-5 w-5 text-[#222222] transition-colors duration-300 group-hover:text-[#C62828]"
+                  className="relative h-5 w-5 text-[var(--fg)] transition-colors duration-300 group-hover:text-[var(--accent-text)]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -210,20 +214,20 @@ export function ContactSection({
 
           {/* Inquiry Form */}
           <div className="lg:col-span-7">
-            <div className="relative overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#FFFFFF] p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)] sm:p-10">
+            <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-6 shadow-[var(--shadow-elevated)] sm:p-10">
               {submittedRecord ? (
                 <div
                   role="status"
                   data-testid="inquiry-confirmation"
                   className="py-8"
                 >
-                  <div className="flex items-center gap-3 text-[#222222]">
-                    <CheckCircle2 className="h-5 w-5 shrink-0 text-[#C62828]" />
+                  <div className="flex items-center gap-3 text-[var(--fg)]">
+                    <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--accent-text)]" />
                     <h3 className="font-display text-lg font-light uppercase tracking-[0.22em]">
                       {t.contact.inquirySent}
                     </h3>
                   </div>
-                  <p className="mt-4 max-w-lg text-sm leading-relaxed text-[#555555]">
+                  <p className="mt-4 max-w-lg text-sm leading-relaxed text-[var(--fg-muted)]">
                     {t.contact.inquiryConfirmation(
                       submittedRecord.name,
                       submittedRecord.subject,
@@ -233,7 +237,7 @@ export function ContactSection({
                   <button
                     type="button"
                     onClick={() => setSubmittedRecord(null)}
-                    className="mt-8 inline-flex min-h-[44px] items-center rounded-lg border border-[#E5E7EB] px-6 py-2.5 font-display text-xs uppercase tracking-[0.24em] text-[#222222] transition-colors duration-200 hover:border-[#C62828] hover:text-[#C62828] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
+                    className="mt-8 inline-flex min-h-[44px] items-center rounded-lg border border-[var(--border)] px-6 py-2.5 font-display text-xs uppercase tracking-[0.24em] text-[var(--fg)] transition-colors duration-200 hover:border-[#C62828] hover:text-[var(--accent-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
                   >
                     {t.contact.sendAnotherMessage}
                   </button>
@@ -244,7 +248,7 @@ export function ContactSection({
                     <div>
                       <label
                         htmlFor="inquiry-name"
-                        className="block font-display text-xs uppercase tracking-[0.22em] text-[#222222]"
+                        className="block font-display text-xs uppercase tracking-[0.22em] text-[var(--fg)]"
                       >
                         {t.contact.nameLabel}
                       </label>
@@ -260,10 +264,10 @@ export function ContactSection({
                         }}
                         aria-invalid={Boolean(errors.name)}
                         placeholder={t.contact.namePlaceholder}
-                        className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-4 py-2.5 text-sm text-[#222222] placeholder:text-[#6B7280] transition-all duration-200 hover:border-[#222222]/30 focus:border-[#C62828] focus:bg-[#FFFFFF] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
+                        className="mt-2 block min-h-[44px] w-full rounded-xl border border-[var(--border)] bg-[var(--input-bg)] px-4 py-2.5 text-sm text-[var(--fg)] placeholder:text-[var(--fg-subtle)] transition-all duration-200 hover:border-[var(--border-hover)] focus:border-[#C62828] focus:bg-[var(--input-bg-focus)] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
                       />
                       {errors.name && (
-                        <p role="alert" className="mt-1.5 text-xs text-[#C62828]">
+                        <p role="alert" className="mt-1.5 text-xs text-[var(--accent-text)]">
                           {errors.name}
                         </p>
                       )}
@@ -272,7 +276,7 @@ export function ContactSection({
                     <div>
                       <label
                         htmlFor="inquiry-email"
-                        className="block font-display text-xs uppercase tracking-[0.22em] text-[#222222]"
+                        className="block font-display text-xs uppercase tracking-[0.22em] text-[var(--fg)]"
                       >
                         {t.contact.emailLabel}
                       </label>
@@ -288,10 +292,10 @@ export function ContactSection({
                         }}
                         aria-invalid={Boolean(errors.email)}
                         placeholder={t.contact.emailPlaceholder}
-                        className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-4 py-2.5 text-sm text-[#222222] placeholder:text-[#6B7280] transition-all duration-200 hover:border-[#222222]/30 focus:border-[#C62828] focus:bg-[#FFFFFF] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
+                        className="mt-2 block min-h-[44px] w-full rounded-xl border border-[var(--border)] bg-[var(--input-bg)] px-4 py-2.5 text-sm text-[var(--fg)] placeholder:text-[var(--fg-subtle)] transition-all duration-200 hover:border-[var(--border-hover)] focus:border-[#C62828] focus:bg-[var(--input-bg-focus)] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
                       />
                       {errors.email && (
-                        <p role="alert" className="mt-1.5 text-xs text-[#C62828]">
+                        <p role="alert" className="mt-1.5 text-xs text-[var(--accent-text)]">
                           {errors.email}
                         </p>
                       )}
@@ -301,7 +305,7 @@ export function ContactSection({
                   <div>
                     <label
                       htmlFor="inquiry-subject"
-                      className="block font-display text-xs uppercase tracking-[0.22em] text-[#222222]"
+                      className="block font-display text-xs uppercase tracking-[0.22em] text-[var(--fg)]"
                     >
                       {t.contact.subjectLabel}
                     </label>
@@ -314,14 +318,14 @@ export function ContactSection({
                         setSubjectEdited(true);
                         setValues((prev) => ({ ...prev, subject: e.target.value }));
                       }}
-                      className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-4 py-2.5 text-sm text-[#222222] placeholder:text-[#6B7280] transition-all duration-200 hover:border-[#222222]/30 focus:border-[#C62828] focus:bg-[#FFFFFF] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
+                      className="mt-2 block min-h-[44px] w-full rounded-xl border border-[var(--border)] bg-[var(--input-bg)] px-4 py-2.5 text-sm text-[var(--fg)] placeholder:text-[var(--fg-subtle)] transition-all duration-200 hover:border-[var(--border-hover)] focus:border-[#C62828] focus:bg-[var(--input-bg-focus)] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="inquiry-message"
-                      className="block font-display text-xs uppercase tracking-[0.22em] text-[#222222]"
+                      className="block font-display text-xs uppercase tracking-[0.22em] text-[var(--fg)]"
                     >
                       {t.contact.messageLabel}
                     </label>
@@ -337,10 +341,10 @@ export function ContactSection({
                       }}
                       aria-invalid={Boolean(errors.message)}
                       placeholder={t.contact.messagePlaceholder}
-                      className="mt-2 block w-full rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-4 py-3 text-sm text-[#222222] placeholder:text-[#6B7280] transition-all duration-200 hover:border-[#222222]/30 focus:border-[#C62828] focus:bg-[#FFFFFF] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
+                      className="mt-2 block w-full rounded-xl border border-[var(--border)] bg-[var(--input-bg)] px-4 py-3 text-sm text-[var(--fg)] placeholder:text-[var(--fg-subtle)] transition-all duration-200 hover:border-[var(--border-hover)] focus:border-[#C62828] focus:bg-[var(--input-bg-focus)] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
                     />
                     {errors.message && (
-                      <p role="alert" className="mt-1.5 text-xs text-[#C62828]">
+                      <p role="alert" className="mt-1.5 text-xs text-[var(--accent-text)]">
                         {errors.message}
                       </p>
                     )}
@@ -348,7 +352,7 @@ export function ContactSection({
 
                   <button
                     type="submit"
-                    className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-[#222222] bg-[#222222] px-8 py-3 font-display text-xs font-normal uppercase tracking-[0.28em] text-white transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#C62828] hover:bg-[#C62828] hover:shadow-[0_10px_28px_rgba(198,40,40,0.24)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-[var(--btn-primary-bg)] bg-[var(--btn-primary-bg)] px-8 py-3 font-display text-xs font-normal uppercase tracking-[0.28em] text-[var(--btn-primary-fg)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#C62828] hover:bg-[#C62828] hover:text-white hover:shadow-[0_10px_28px_rgba(198,40,40,0.24)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
                   >
                     {t.contact.sendInquiry}
                   </button>
@@ -359,7 +363,7 @@ export function ContactSection({
         </div>
 
         {/* Quiet Editorial Footer */}
-        <div className="mt-20 flex flex-col items-center justify-between gap-4 border-t border-[#E5E7EB] pt-8 pb-12 text-xs tracking-[0.16em] text-[#555555] sm:flex-row sm:pr-16 sm:pb-2">
+        <div className="mt-20 flex flex-col items-center justify-between gap-4 border-t border-[var(--border)] pt-8 pb-12 text-xs tracking-[0.16em] text-[var(--fg-muted)] sm:flex-row sm:pr-16 sm:pb-2">
           <p className="uppercase">
             &copy; {new Date().getFullYear()} {ARTIST_PROFILE.name} · {t.footer.rightsReserved}
           </p>
@@ -368,14 +372,14 @@ export function ContactSection({
               <button
                 type="button"
                 onClick={onReplayEntrance}
-                className="uppercase transition-colors hover:text-[#222222] focus-visible:outline-2 focus-visible:outline-[#C62828]"
+                className="uppercase transition-colors hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-[#C62828]"
               >
                 {t.footer.entranceGate}
               </button>
             )}
             <a
               href="#home"
-              className="uppercase transition-colors hover:text-[#222222] focus-visible:outline-2 focus-visible:outline-[#C62828]"
+              className="uppercase transition-colors hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-[#C62828]"
             >
               {t.footer.backToTop}
             </a>
