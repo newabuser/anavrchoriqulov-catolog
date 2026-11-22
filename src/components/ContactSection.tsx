@@ -86,7 +86,7 @@ export function ContactSection({
           <LapisCourse speed={35} scale={180} active={isEntered && !isTransitioning} />
         )}
       </div>
-      <div className="absolute inset-0 z-0 bg-[var(--contact-overlay)] backdrop-blur-[2px]" />
+      <div className="absolute inset-0 z-0 bg-[var(--contact-overlay)]" />
 
       <div className="relative z-10 mx-auto max-w-[1360px]">
         <div className="grid grid-cols-1 gap-14 lg:grid-cols-12 lg:gap-16">

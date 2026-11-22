@@ -115,18 +115,50 @@
   --ornament-filter: brightness(0) invert(1);
 }
 
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
+/* While the symbiote overlay fully covers the screen, swap colours without per-element transitions */
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
 }
 
-::view-transition-old(root) {
-  z-index: 1;
-}
-
-::view-transition-new(root) {
-  z-index: 2;
+/* Phones / touch devices: backdrop blur over the animated canvas is re-rendered every frame
+   and is the single most expensive effect for mobile GPUs. Backgrounds are already
+   semi-opaque, so dropping it keeps the look while removing the lag. */
+@media (max-width: 767px), (pointer: coarse) {
+  [class*="backdrop-blur"],
+  .welcome-neon-btn {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  :root,
+  :root[data-theme="light"] {
+    --nav-bg: rgba(255, 255, 255, 0.96);
+    --nav-bg-scrolled: rgba(255, 255, 255, 0.98);
+    --search-bg: rgba(248, 249, 250, 0.99);
+    --contact-overlay: rgba(255, 255, 255, 0.55);
+  }
+  :root[data-theme="dark"] {
+    --nav-bg: rgba(10, 10, 10, 0.96);
+    --nav-bg-scrolled: rgba(10, 10, 10, 0.98);
+    --search-bg: rgba(19, 19, 19, 0.99);
+    --contact-overlay: rgba(10, 10, 10, 0.66);
+  }
+  /* Full-screen animated blend layer + infinite glow animations are too heavy on phones */
+  .film-grain-overlay {
+    animation: none !important;
+    mix-blend-mode: normal !important;
+    opacity: 0.035 !important;
+  }
+  .welcome-neon-btn {
+    animation: none !important;
+  }
+  .welcome-neon-btn::before {
+    animation-duration: 12s !important;
+  }
+  .welcome-neon-btn::after {
+    display: none !important;
+  }
 }
 
 .wordmark-lockup {

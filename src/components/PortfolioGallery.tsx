@@ -334,7 +334,7 @@ export function PortfolioGallery({
       >
         <div
           data-testid="gallery-chladni-sticky"
-          className="sticky top-0 h-[100dvh] w-full overflow-hidden"
+          className="sticky top-0 h-[100lvh] w-full overflow-hidden"
         >
           <ChladniGalleryBackground
             active={isEntered}

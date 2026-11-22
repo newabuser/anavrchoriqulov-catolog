@@ -6,12 +6,12 @@ import {
   resolveInitialTheme,
 } from './useTheme';
 
-test('resolveInitialTheme honors persisted localStorage theme over system preference', () => {
+test('resolveInitialTheme defaults to light and only honors an explicitly saved dark theme', () => {
   assert.equal(resolveInitialTheme('dark', false), 'dark');
   assert.equal(resolveInitialTheme('light', true), 'light');
-  assert.equal(resolveInitialTheme(null, true), 'dark');
+  assert.equal(resolveInitialTheme(null, true), 'light');
   assert.equal(resolveInitialTheme(null, false), 'light');
-  assert.equal(resolveInitialTheme('invalid', true), 'dark');
+  assert.equal(resolveInitialTheme('invalid', true), 'light');
 });
 
 test('getChladniThemeColors returns crisp red sand and matching plate for light and dark themes', () => {

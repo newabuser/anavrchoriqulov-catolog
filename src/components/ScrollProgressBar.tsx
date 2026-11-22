@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { computeScrollProgress } from '../utils/galleryLogic';
 
 interface ScrollProgressBarProps {
@@ -7,11 +7,16 @@ interface ScrollProgressBarProps {
 }
 
 export function ScrollProgressBar({ visible, layoutKey }: ScrollProgressBarProps) {
-  const [progress, setProgress] = useState(0);
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  const applyProgress = (value: number) => {
+    if (barRef.current) barRef.current.style.transform = `scaleX(${value})`;
+    rootRef.current?.setAttribute('data-progress', value.toFixed(3));
+  };
 
   useEffect(() => {
     if (!visible) {
-      setProgress(0);
       return;
     }
 
@@ -24,7 +29,7 @@ export function ScrollProgressBar({ visible, layoutKey }: ScrollProgressBarProps
         document.documentElement.scrollHeight,
         window.innerHeight
       );
-      setProgress(next);
+      applyProgress(next);
     };
 
     const scheduleUpdate = () => {
@@ -59,14 +64,16 @@ export function ScrollProgressBar({ visible, layoutKey }: ScrollProgressBarProps
 
   return (
     <div
+      ref={rootRef}
       aria-hidden="true"
       data-testid="scroll-progress-bar"
-      data-progress={progress.toFixed(3)}
+      data-progress="0.000"
       className="pointer-events-none fixed top-0 right-0 left-0 z-50 h-[2px] bg-[var(--border)]/35"
     >
       <div
-        className="h-full w-full origin-left bg-[#c81018] transition-transform duration-75 ease-out will-change-transform"
-        style={{ transform: `scaleX(${progress})` }}
+        ref={barRef}
+        className="h-full w-full origin-left bg-[#c81018] will-change-transform"
+        style={{ transform: 'scaleX(0)' }}
       />
     </div>
   );

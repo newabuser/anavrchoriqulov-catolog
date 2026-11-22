@@ -25,7 +25,7 @@ export interface QualityGovernorState {
 }
 
 export const CHLADNI_DESKTOP_PARTICLES = 12000;
-export const CHLADNI_MOBILE_PARTICLES = 3500;
+export const CHLADNI_MOBILE_PARTICLES = 2200;
 export const CHLADNI_DESKTOP_WARMUP_STEPS = 90;
 export const CHLADNI_MOBILE_WARMUP_STEPS = 40;
 export const CHLADNI_WARMUP_DT = 1 / 30;
@@ -145,16 +145,19 @@ export type HeavyAnimationId = 'chladni' | 'lapis';
 interface CoordinatorState {
   chladniWanted: boolean;
   lapisWanted: boolean;
+  paused: boolean;
 }
 
 const coordinatorState: CoordinatorState = {
   chladniWanted: false,
   lapisWanted: false,
+  paused: false,
 };
 
 const coordinatorListeners = new Set<() => void>();
 
 export function getActiveHeavyAnimation(): HeavyAnimationId | null {
+  if (coordinatorState.paused) return null;
   if (coordinatorState.lapisWanted) return 'lapis';
   if (coordinatorState.chladniWanted) return 'chladni';
   return null;
@@ -171,6 +174,13 @@ export function setHeavyAnimationWanted(id: HeavyAnimationId, wanted: boolean): 
   if (prev !== next) {
     coordinatorListeners.forEach((listener) => listener());
   }
+}
+
+// Temporarily stops every heavy background animation (e.g. while the theme switch plays).
+export function setHeavyAnimationsPaused(paused: boolean): void {
+  if (coordinatorState.paused === paused) return;
+  coordinatorState.paused = paused;
+  coordinatorListeners.forEach((listener) => listener());
 }
 
 export function subscribeHeavyAnimationCoordinator(listener: () => void): () => void {

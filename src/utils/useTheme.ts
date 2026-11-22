@@ -2,14 +2,13 @@ import { useSyncExternalStore } from 'react';
 
 export type ThemeMode = 'light' | 'dark';
 
+// The site is light by default. Only an explicit choice made with the theme toggle
+// (saved in localStorage) switches it to dark; the device's dark-mode setting is ignored.
 export function resolveInitialTheme(
   savedTheme: string | null | undefined,
-  prefersDark: boolean
+  _prefersDark?: boolean
 ): ThemeMode {
-  if (savedTheme === 'dark' || savedTheme === 'light') {
-    return savedTheme;
-  }
-  return prefersDark ? 'dark' : 'light';
+  return savedTheme === 'dark' ? 'dark' : 'light';
 }
 
 export function getChladniThemeColors(theme: ThemeMode): {

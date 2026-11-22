@@ -51,9 +51,21 @@ export function Navbar({ onReplayEntrance }: NavbarProps) {
       setActiveHref(nextActive);
     };
 
+    let rafId = 0;
+    const onScroll = () => {
+      if (rafId !== 0) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        handleScroll();
+      });
+    };
+
     handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      if (rafId !== 0) window.cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', onScroll);
+    };
   }, []);
 
   useEffect(() => {
@@ -97,7 +109,7 @@ export function Navbar({ onReplayEntrance }: NavbarProps) {
         <header
           data-testid="site-navbar"
           data-scrolled={isScrolled ? 'true' : 'false'}
-          className={`pointer-events-auto relative mx-auto h-14 w-[92%] max-w-[1320px] rounded-2xl border border-[var(--border)] backdrop-blur-[26px] backdrop-saturate-[155%] md:h-[62px] md:w-[90%] ${
+          className={`pointer-events-auto relative mx-auto h-14 w-[92%] max-w-[1320px] rounded-2xl border border-[var(--border)] backdrop-blur-[12px] md:h-[62px] md:w-[90%] ${
             prefersReducedMotion
               ? ''
               : 'transition-[background-color,border-color,box-shadow] duration-300 ease-out'
@@ -284,7 +296,7 @@ export function Navbar({ onReplayEntrance }: NavbarProps) {
               exit={{ opacity: 0 }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.3, ease: 'easeOut' }}
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 z-[55] bg-black/40 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-[55] bg-black/55 md:hidden"
             />
 
             <motion.div

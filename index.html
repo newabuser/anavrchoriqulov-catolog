@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script>try{var t=localStorage.getItem("theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=t}catch(e){}</script>
+    <meta name="theme-color" content="#FFFFFF" />
+    <script>try{var t=localStorage.getItem("theme")==="dark"?"dark":"light";document.documentElement.dataset.theme=t;if(t==="dark")document.querySelector('meta[name="theme-color"]').setAttribute("content","#0a0a0a")}catch(e){}</script>
     <title>Anvar Choriqulov — Painter</title>
     <meta
       name="description"
