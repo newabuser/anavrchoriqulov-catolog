@@ -22,7 +22,7 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       entranceGate: 'Kirish darvozasi',
     },
     portfolio: {
-      catalogueTitle: 'K A T A L O G',
+      catalogueTitle: 'R Ö Y X A T',
       catalogueSubtitle: 'Nomi - O‘lchami - Narxi',
       allCategory: 'Barcha asarlar',
       oilCategory: 'Moybo‘yoq',

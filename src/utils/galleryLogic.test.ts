@@ -12,6 +12,7 @@ import {
   formatDisplayPrice,
   getAdjacentArtwork,
   getArtworkMediumType,
+  getAvailableArtworks,
   getEffectiveColumnCount,
   isArtworkSold,
   shouldShowBackToTop,
@@ -26,7 +27,6 @@ test('filterArtworksByCategory filters all 4 curated categories without duplicat
   const oil = filterArtworksByCategory(ARTWORKS, 'OIL');
   assert.equal(oil.length, 124);
   assert.ok(oil.every((a) => getArtworkMediumType(a) === 'oil'));
-  // Sold oil painting stays visible inside Oil Paintings
   assert.ok(oil.some((a) => a.id === 'artwork-21'));
 
   const watercolor = filterArtworksByCategory(ARTWORKS, 'WATERCOLOR');
@@ -42,13 +42,22 @@ test('filterArtworksByCategory filters all 4 curated categories without duplicat
   );
 });
 
-test('computeCategoryCounts tallies ALL, OIL, WATERCOLOR, and SOLD accurately', () => {
+test('getAvailableArtworks excludes sold works and preserves duplicate titles by unique ID', () => {
+  const available = getAvailableArtworks(ARTWORKS);
+  assert.equal(available.length, 125);
+  assert.ok(available.every((a) => !isArtworkSold(a)));
+  assert.equal(available.some((a) => a.id === 'artwork-21'), false);
+  // Artworks with duplicate titles remain distinct entries
+  assert.equal(available.filter((a) => a.title === 'Mulla').length, 4);
+  assert.equal(available.filter((a) => a.title === 'O’zbeklar').length, 4);
+  assert.equal(new Set(available.map((a) => a.id)).size, 125);
+});
+
+test('GALLERY_CATEGORIES keeps unified ALL view and computeCategoryCounts tallies accurately', () => {
+  assert.deepEqual(GALLERY_CATEGORIES, ['ALL']);
   const counts = computeCategoryCounts(ARTWORKS, GALLERY_CATEGORIES);
   assert.deepEqual(counts, {
     ALL: 126,
-    OIL: 124,
-    WATERCOLOR: 2,
-    SOLD: 1,
   });
 });
 

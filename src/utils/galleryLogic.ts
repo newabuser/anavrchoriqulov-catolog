@@ -43,6 +43,14 @@ export function formatDisplayPrice(price?: string): string | undefined {
 }
 
 /**
+ * Returns only artworks that are available for public gallery display,
+ * excluding sold items while keeping underlying catalogue records intact.
+ */
+export function getAvailableArtworks(artworks: Artwork[]): Artwork[] {
+  return artworks.filter((item) => !isArtworkSold(item));
+}
+
+/**
  * Filters artworks by gallery category without duplicates.
  * - ALL: Every artwork in the catalogue (available and sold)
  * - OIL: Oil paintings only (available and sold)

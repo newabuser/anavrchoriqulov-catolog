@@ -32,7 +32,7 @@ export const ARTIST_PROFILE: ArtistProfile = {
 
 export const TELEGRAM_PURCHASE_URL = 'https://t.me/Anvar_rassom';
 
-export const GALLERY_CATEGORIES: ArtworkCategory[] = ['ALL', 'OIL', 'WATERCOLOR', 'SOLD'];
+export const GALLERY_CATEGORIES: ArtworkCategory[] = ['ALL'];
 
 export const ARTWORKS: Artwork[] = [
   {

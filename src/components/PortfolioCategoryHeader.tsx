@@ -1,8 +1,6 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useLanguage } from '../context/LanguageContext';
-
-const PORTFOLIO_DIVIDER_ORNAMENT_URL =
-  'https://res.cloudinary.com/ntpikwj6/image/upload/v1794977407/Picsart_26-11-17_16-31-04-404.png';
+import portfolioDividerOrnamentWhite from '../assets/images/portfolio-divider-ornament-white.png';
 
 interface PortfolioCategoryHeaderProps {
   id?: string;
@@ -42,9 +40,8 @@ export function PortfolioCategoryHeader({
       <p className="portfolio-category-subtitle">{displaySubtitle}</p>
       <div aria-hidden="true" className="portfolio-ornament-divider">
         <img
-          src={PORTFOLIO_DIVIDER_ORNAMENT_URL}
+          src={portfolioDividerOrnamentWhite}
           alt=""
-          referrerPolicy="no-referrer"
           draggable={false}
           data-testid="portfolio-divider-ornament"
           className="portfolio-ornament-img"

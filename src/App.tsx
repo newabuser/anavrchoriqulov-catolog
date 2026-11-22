@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { AboutSection } from './components/AboutSection';
 import { ArtworkLightbox } from './components/ArtworkLightbox';
 import { BackToTopButton } from './components/BackToTopButton';
 import { CinematicBackdrop } from './components/CinematicBackdrop';
@@ -9,8 +8,8 @@ import { PortfolioGallery } from './components/PortfolioGallery';
 import { ScrollProgressBar } from './components/ScrollProgressBar';
 import { WelcomeGate } from './components/WelcomeGate';
 import { ARTWORKS, GALLERY_CATEGORIES } from './data/portfolioData';
-import { Artwork, ArtworkCategory } from './types/artwork';
-import { filterArtworks, getAdjacentArtwork } from './utils/galleryLogic';
+import { Artwork } from './types/artwork';
+import { filterArtworks, getAdjacentArtwork, getAvailableArtworks } from './utils/galleryLogic';
 import { LanguageProvider } from './context/LanguageContext';
 
 function shouldAutostartFromQuery(): boolean {
@@ -26,14 +25,18 @@ function shouldShowSkeletonFromQuery(): boolean {
 export default function App() {
   const [isEntered, setIsEntered] = useState<boolean>(shouldAutostartFromQuery);
   const [isGalleryLoading] = useState<boolean>(shouldShowSkeletonFromQuery);
-  const [activeCategory, setActiveCategory] = useState<ArtworkCategory>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(null);
   const [inquirySubject] = useState<string>('');
 
+  const availableArtworks = useMemo(
+    () => getAvailableArtworks(ARTWORKS),
+    []
+  );
+
   const filteredArtworks = useMemo(
-    () => filterArtworks(ARTWORKS, activeCategory, searchQuery),
-    [activeCategory, searchQuery]
+    () => filterArtworks(availableArtworks, 'ALL', searchQuery),
+    [availableArtworks, searchQuery]
   );
 
   const selectedIndex = useMemo(
@@ -52,11 +55,6 @@ export default function App() {
   const handleReplayEntrance = useCallback(() => {
     setSelectedArtworkId(null);
     setIsEntered(false);
-  }, []);
-
-  const handleSelectCategory = useCallback((category: ArtworkCategory) => {
-    setActiveCategory(category);
-    setSelectedArtworkId(null);
   }, []);
 
   const handleNavigateLightbox = useCallback(
@@ -80,11 +78,11 @@ export default function App() {
   return (
     <LanguageProvider>
       <div
-        className="relative min-h-screen bg-[#050505] text-[#eaeaea]"
+        className="relative min-h-screen bg-[#FFFFFF] text-[#222222]"
         data-entered={isEntered ? 'true' : 'false'}
       >
-        <CinematicBackdrop />
-        <ScrollProgressBar visible={isEntered} layoutKey={`${activeCategory}-${filteredArtworks.length}`} />
+        {!isEntered && <CinematicBackdrop />}
+        <ScrollProgressBar visible={isEntered} layoutKey={`ALL-${filteredArtworks.length}`} />
         <WelcomeGate isEntered={isEntered} onEnter={handleEnterPlatform} />
 
         <div
@@ -97,18 +95,15 @@ export default function App() {
 
           <main>
             <PortfolioGallery
-              artworks={ARTWORKS}
+              artworks={availableArtworks}
               categories={GALLERY_CATEGORIES}
-              activeCategory={activeCategory}
+              activeCategory="ALL"
               searchQuery={searchQuery}
               isEntered={isEntered}
               isLoading={isGalleryLoading}
-              onSelectCategory={handleSelectCategory}
               onSearchChange={setSearchQuery}
               onOpenArtwork={handleOpenArtwork}
             />
-
-            <AboutSection />
           </main>
 
           <ContactSection
@@ -130,7 +125,7 @@ export default function App() {
           isLightboxOpen={selectedArtwork !== null}
         />
 
-        <div aria-hidden="true" data-testid="film-grain-overlay" className="film-grain-overlay" />
+        {!isEntered && <div aria-hidden="true" data-testid="film-grain-overlay" className="film-grain-overlay" />}
       </div>
     </LanguageProvider>
   );

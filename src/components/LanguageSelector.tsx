@@ -17,7 +17,6 @@ export function LanguageSelector({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  // Close dropdown on outside click or escape key (for desktop)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -57,15 +56,15 @@ export function LanguageSelector({
         aria-label={t.nav.selectLanguage}
       >
         <div className="flex items-center justify-between mb-2.5 px-0.5">
-          <span className="font-display text-[10px] font-normal uppercase tracking-[0.28em] text-[#c81018]">
+          <span className="font-display text-[10px] font-normal uppercase tracking-[0.28em] text-[#C62828]">
             {t.nav.selectLanguage}
           </span>
-          <span className="text-[11px] text-neutral-400 font-display">
+          <span className="text-[11px] text-[#555555] font-display">
             {currentOption.label}
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-[#eaeaea]/[0.14] bg-[#0c0c0e]/90 p-1.5 shadow-[inset_0_1px_0_rgba(234,234,234,0.1),0_4px_16px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+        <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] p-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.04)] backdrop-blur-xl">
           {options.map((opt) => {
             const isActive = opt.code === language;
             return (
@@ -76,8 +75,8 @@ export function LanguageSelector({
                 aria-pressed={isActive}
                 className={`relative flex min-h-[44px] flex-col items-center justify-center rounded-lg px-2 py-1.5 font-display transition-all duration-200 ${
                   isActive
-                    ? 'border border-[#c81018]/80 bg-[#c81018] text-white shadow-[0_2px_12px_rgba(200,16,24,0.38)]'
-                    : 'border border-transparent bg-transparent text-neutral-300 hover:border-[#eaeaea]/20 hover:bg-white/[0.04] hover:text-[#eaeaea]'
+                    ? 'border border-[#C62828] bg-[#C62828] text-white shadow-[0_2px_12px_rgba(198,40,40,0.28)]'
+                    : 'border border-transparent bg-transparent text-[#555555] hover:border-[#E5E7EB] hover:bg-[#FFFFFF] hover:text-[#222222]'
                 }`}
               >
                 <span className="text-xs font-medium tracking-[0.18em]">
@@ -106,22 +105,22 @@ export function LanguageSelector({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={`${t.nav.selectLanguage}: ${currentOption.label}`}
-        className={`group inline-flex min-h-[38px] items-center gap-2 rounded-full border px-3 py-1 font-display text-xs font-normal uppercase tracking-[0.2em] shadow-[inset_0_1px_0_rgba(234,234,234,0.12),0_2px_8px_rgba(0,0,0,0.32)] backdrop-blur-md transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018] ${
+        className={`group inline-flex min-h-[38px] items-center gap-2 rounded-full border px-3 py-1 font-display text-xs font-normal uppercase tracking-[0.2em] shadow-[0_2px_8px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828] ${
           isOpen
-            ? 'border-[#c81018]/80 bg-[#160c0d]/90 text-white shadow-[0_0_14px_rgba(200,16,24,0.24)]'
-            : 'border-[#eaeaea]/[0.16] bg-[#0c0c0e]/80 text-[#eaeaea] hover:border-[#eaeaea]/[0.32] hover:bg-white/[0.05] hover:text-white'
+            ? 'border-[#C62828] bg-[#FFFFFF] text-[#222222] shadow-[0_0_14px_rgba(198,40,40,0.15)]'
+            : 'border-[#E5E7EB] bg-[#F8F9FA] text-[#222222] hover:border-[#D1D5DB] hover:bg-[#FFFFFF] hover:text-[#111111]'
         }`}
       >
         <Globe
           className={`h-3.5 w-3.5 transition-colors ${
-            isOpen ? 'text-[#c81018]' : 'text-neutral-400 group-hover:text-neutral-200'
+            isOpen ? 'text-[#C62828]' : 'text-[#6B7280] group-hover:text-[#222222]'
           }`}
           aria-hidden="true"
         />
         <span className="text-[11px] tracking-[0.18em]">{currentOption.shortLabel}</span>
         <ChevronDown
-          className={`h-3 w-3 text-neutral-400 transition-transform duration-200 group-hover:text-neutral-200 ${
-            isOpen ? 'rotate-180 text-white' : ''
+          className={`h-3 w-3 text-[#6B7280] transition-transform duration-200 group-hover:text-[#222222] ${
+            isOpen ? 'rotate-180 text-[#222222]' : ''
           }`}
           aria-hidden="true"
         />
@@ -136,14 +135,8 @@ export function LanguageSelector({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={prefersReducedMotion ? undefined : { opacity: 0, y: -6, scale: 0.96 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 top-full mt-2 w-44 origin-top-right overflow-hidden rounded-xl border border-[#eaeaea]/[0.18] bg-[#0a0a0d]/[0.98] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.88),inset_0_1px_0_rgba(234,234,234,0.16)] backdrop-blur-2xl z-50"
+            className="absolute right-0 top-full mt-2 w-44 origin-top-right overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-2xl z-50"
           >
-            {/* Subtle silver reflection line */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-[#eaeaea]/25 to-transparent"
-            />
-
             <div className="space-y-0.5">
               {options.map((opt) => {
                 const isActive = opt.code === language;
@@ -157,16 +150,16 @@ export function LanguageSelector({
                       setLanguage(opt.code);
                       setIsOpen(false);
                     }}
-                    className={`flex min-h-[38px] w-full items-center justify-between rounded-lg px-3 py-2 text-left font-display transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#c81018] ${
+                    className={`flex min-h-[38px] w-full items-center justify-between rounded-lg px-3 py-2 text-left font-display transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#C62828] ${
                       isActive
-                        ? 'bg-[#c81018]/15 text-white font-medium'
-                        : 'text-neutral-300 hover:bg-white/[0.06] hover:text-[#eaeaea]'
+                        ? 'bg-[#C62828]/10 text-[#C62828] font-medium'
+                        : 'text-[#374151] hover:bg-[#F8F9FA] hover:text-[#111111]'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <span
                         className={`inline-block h-1.5 w-1.5 rounded-full ${
-                          isActive ? 'bg-[#c81018] shadow-[0_0_6px_#c81018]' : 'bg-neutral-600'
+                          isActive ? 'bg-[#C62828] shadow-[0_0_6px_#C62828]' : 'bg-[#D1D5DB]'
                         }`}
                         aria-hidden="true"
                       />
@@ -176,11 +169,11 @@ export function LanguageSelector({
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-light uppercase tracking-[0.16em] text-neutral-400">
+                      <span className="text-[10px] font-light uppercase tracking-[0.16em] text-[#6B7280]">
                         {opt.shortLabel}
                       </span>
                       {isActive && (
-                        <Check className="h-3.5 w-3.5 text-[#c81018]" aria-hidden="true" />
+                        <Check className="h-3.5 w-3.5 text-[#C62828]" aria-hidden="true" />
                       )}
                     </div>
                   </button>

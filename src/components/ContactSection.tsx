@@ -4,6 +4,7 @@ import { ARTIST_PROFILE } from '../data/portfolioData';
 import { InquiryFormErrors, InquiryFormValues } from '../types/artwork';
 import { validateInquiryForm } from '../utils/galleryLogic';
 import { useLanguage } from '../context/LanguageContext';
+import LapisCourse from './LapisCourse';
 
 interface ContactSectionProps {
   prefilledSubject?: string;
@@ -73,74 +74,80 @@ export function ContactSection({
     <footer
       id="contact"
       aria-labelledby="contact-heading"
-      className="relative scroll-mt-16 overflow-hidden border-t border-[#eaeaea]/10 bg-gradient-to-b from-[#070709]/80 via-[#08080a]/84 to-[#050505]/92 px-5 pt-24 pb-12 sm:px-8 lg:pt-30"
+      className="relative scroll-mt-16 overflow-hidden border-t border-[#E5E7EB] px-5 pt-24 pb-12 sm:px-8 lg:pt-30"
     >
-      {/* Collector Salon Lighting: Studio Top-Left Wash & Asymmetrical Crimson Reflection */}
-      <div aria-hidden="true" className="contact-salon-lighting z-0" />
+      {/* Background LapisCourse WebGL Animation */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-85">
+        <LapisCourse speed={35} scale={180} />
+      </div>
+      <div className="absolute inset-0 z-0 bg-white/45 backdrop-blur-[2px]" />
 
       <div className="relative z-10 mx-auto max-w-[1360px]">
         <div className="grid grid-cols-1 gap-14 lg:grid-cols-12 lg:gap-16">
           {/* Studio Contact Details */}
           <div className="lg:col-span-5">
-            <p className="font-display text-xs font-normal uppercase tracking-[0.36em] text-[#e23c42]">
+            <p className="font-display text-xs font-normal uppercase tracking-[0.36em] text-[#C62828]">
               {t.contact.sectionLabel}
             </p>
             <h2
               id="contact-heading"
-              className="mt-3 font-mauline text-3xl font-normal uppercase tracking-[0.24em] text-[#eaeaea] sm:text-4xl [text-wrap:balance]"
+              className="mt-3 font-mauline text-3xl font-normal uppercase tracking-[0.24em] text-[#222222] sm:text-4xl [text-wrap:balance]"
             >
               {t.contact.heading}
             </h2>
 
-            <p className="mt-6 max-w-md text-sm leading-relaxed text-neutral-400 sm:text-[15px]">
+            <p className="mt-6 max-w-md text-sm leading-relaxed text-[#555555] sm:text-[15px]">
               {t.contact.lead}
             </p>
 
-            <dl className="mt-10 divide-y divide-[#eaeaea]/10 border-y border-[#eaeaea]/10 text-sm">
+            <dl className="mt-10 divide-y divide-[#E5E7EB] border-y border-[#E5E7EB] text-sm">
               <div className="py-4">
-                <dt className="font-display text-xs uppercase tracking-[0.22em] text-neutral-400">
+                <dt className="font-display text-xs uppercase tracking-[0.22em] text-[#555555]">
                   {t.contact.directCorrespondence}
                 </dt>
-                <dd className="mt-1.5 text-[#eaeaea]">
+                <dd className="mt-1.5 text-[#222222]">
                   <a
                     href={`mailto:${ARTIST_PROFILE.contactEmail}`}
-                    className="transition-colors duration-200 hover:text-[#c81018] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
+                    className="transition-colors duration-200 hover:text-[#C62828] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
                   >
                     {ARTIST_PROFILE.contactEmail}
                   </a>
                 </dd>
               </div>
               <div className="py-4">
-                <dt className="font-display text-xs uppercase tracking-[0.22em] text-neutral-400">
-                  {t.contact.representation}
+                <dt className="font-display text-xs uppercase tracking-[0.22em] text-[#555555]">
+                  Phone / Telefon
                 </dt>
-                <dd className="mt-1.5 text-neutral-200">
-                  {t.contact.representationValue}
+                <dd className="mt-1.5 text-[#222222]">
+                  <a
+                    href="tel:+998906145294"
+                    className="transition-colors duration-200 hover:text-[#C62828] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
+                  >
+                    +998(90)-614-52-94
+                  </a>
                 </dd>
               </div>
               <div className="py-4">
-                <dt className="font-display text-xs uppercase tracking-[0.22em] text-neutral-400">
-                  {t.contact.journalNotes}
+                <dt className="font-display text-xs uppercase tracking-[0.22em] text-[#555555]">
+                  {t.contact.representation}
                 </dt>
-                <dd className="mt-1.5 uppercase tracking-[0.16em] text-neutral-400">
-                  {t.contact.comingSoon}
+                <dd className="mt-1.5 text-[#222222]">
+                  {t.contact.representationValue}
                 </dd>
               </div>
             </dl>
 
             {/* Direct Social & Studio Channels */}
             <div className="mt-8 flex items-center gap-4">
-              {/* Instagram Icon with glowing red neon aura */}
               <a
                 href="https://www.instagram.com/anvar_choriqulov571?utm_source=ig_web_button_share_sheet&dmpr=ZDNlZDc0MzIxNw=="
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram Profile"
-                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[#eaeaea]/18 bg-[#050505] transition-all duration-300 hover:border-[#c81018] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
+                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-[#C62828] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
               >
-                <div className="absolute inset-0 rounded-xl bg-[#c81018]/25 opacity-70 blur-md transition-opacity duration-300 group-hover:opacity-100 group-hover:bg-[#c81018]/40" aria-hidden="true" />
                 <svg
-                  className="relative h-5 w-5 text-[#eaeaea] transition-colors duration-300 group-hover:text-white"
+                  className="relative h-5 w-5 text-[#222222] transition-colors duration-300 group-hover:text-[#C62828]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -155,17 +162,15 @@ export function ContactSection({
                 </svg>
               </a>
 
-              {/* Telegram Icon with glowing red neon aura */}
               <a
                 href="https://t.me/AnvarArts"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Telegram Channel"
-                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[#eaeaea]/18 bg-[#050505] transition-all duration-300 hover:border-[#c81018] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
+                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-[#C62828] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
               >
-                <div className="absolute inset-0 rounded-xl bg-[#c81018]/25 opacity-70 blur-md transition-opacity duration-300 group-hover:opacity-100 group-hover:bg-[#c81018]/40" aria-hidden="true" />
                 <svg
-                  className="relative h-5 w-5 text-[#eaeaea] transition-colors duration-300 group-hover:text-white"
+                  className="relative h-5 w-5 text-[#222222] transition-colors duration-300 group-hover:text-[#C62828]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -179,15 +184,13 @@ export function ContactSection({
                 </svg>
               </a>
 
-              {/* Gmail Icon / Direct Mail Link */}
               <a
                 href="mailto:artistchoriqulov@gmail.com"
                 aria-label="Email Studio"
-                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[#eaeaea]/18 bg-[#050505] transition-all duration-300 hover:border-[#c81018] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
+                className="group relative flex h-12 w-12 items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-300 hover:border-[#C62828] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
               >
-                <div className="absolute inset-0 rounded-xl bg-[#c81018]/25 opacity-70 blur-md transition-opacity duration-300 group-hover:opacity-100 group-hover:bg-[#c81018]/40" aria-hidden="true" />
                 <svg
-                  className="relative h-5 w-5 text-[#eaeaea] transition-colors duration-300 group-hover:text-white"
+                  className="relative h-5 w-5 text-[#222222] transition-colors duration-300 group-hover:text-[#C62828]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -205,25 +208,20 @@ export function ContactSection({
 
           {/* Inquiry Form */}
           <div className="lg:col-span-7">
-            <div className="relative overflow-hidden rounded-2xl border border-[#eaeaea]/12 bg-[#101013]/88 p-6 shadow-[0_24px_64px_rgba(0,0,0,0.7)] backdrop-blur-xs sm:p-10">
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#eaeaea]/20 to-transparent"
-              />
-
+            <div className="relative overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#FFFFFF] p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)] sm:p-10">
               {submittedRecord ? (
                 <div
                   role="status"
                   data-testid="inquiry-confirmation"
                   className="py-8"
                 >
-                  <div className="flex items-center gap-3 text-[#eaeaea]">
-                    <CheckCircle2 className="h-5 w-5 shrink-0 text-[#c81018]" />
+                  <div className="flex items-center gap-3 text-[#222222]">
+                    <CheckCircle2 className="h-5 w-5 shrink-0 text-[#C62828]" />
                     <h3 className="font-display text-lg font-light uppercase tracking-[0.22em]">
                       {t.contact.inquirySent}
                     </h3>
                   </div>
-                  <p className="mt-4 max-w-lg text-sm leading-relaxed text-neutral-300">
+                  <p className="mt-4 max-w-lg text-sm leading-relaxed text-[#555555]">
                     {t.contact.inquiryConfirmation(
                       submittedRecord.name,
                       submittedRecord.subject,
@@ -233,7 +231,7 @@ export function ContactSection({
                   <button
                     type="button"
                     onClick={() => setSubmittedRecord(null)}
-                    className="mt-8 inline-flex min-h-[44px] items-center rounded-lg border border-[#eaeaea]/28 px-6 py-2.5 font-display text-xs uppercase tracking-[0.24em] text-[#eaeaea] transition-colors duration-200 hover:border-[#c81018] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
+                    className="mt-8 inline-flex min-h-[44px] items-center rounded-lg border border-[#E5E7EB] px-6 py-2.5 font-display text-xs uppercase tracking-[0.24em] text-[#222222] transition-colors duration-200 hover:border-[#C62828] hover:text-[#C62828] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
                   >
                     {t.contact.sendAnotherMessage}
                   </button>
@@ -244,7 +242,7 @@ export function ContactSection({
                     <div>
                       <label
                         htmlFor="inquiry-name"
-                        className="block font-display text-xs uppercase tracking-[0.22em] text-neutral-300"
+                        className="block font-display text-xs uppercase tracking-[0.22em] text-[#222222]"
                       >
                         {t.contact.nameLabel}
                       </label>
@@ -260,10 +258,10 @@ export function ContactSection({
                         }}
                         aria-invalid={Boolean(errors.name)}
                         placeholder={t.contact.namePlaceholder}
-                        className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#eaeaea]/14 bg-[#080808] px-4 py-2.5 text-sm text-[#eaeaea] placeholder:text-neutral-600 transition-all duration-200 hover:border-[#eaeaea]/26 focus:border-[#c81018] focus:bg-[#0a0a0c] focus:ring-1 focus:ring-[#c81018]/35 focus:outline-none"
+                        className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-4 py-2.5 text-sm text-[#222222] placeholder:text-[#6B7280] transition-all duration-200 hover:border-[#222222]/30 focus:border-[#C62828] focus:bg-[#FFFFFF] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
                       />
                       {errors.name && (
-                        <p role="alert" className="mt-1.5 text-xs text-[#c81018]">
+                        <p role="alert" className="mt-1.5 text-xs text-[#C62828]">
                           {errors.name}
                         </p>
                       )}
@@ -272,7 +270,7 @@ export function ContactSection({
                     <div>
                       <label
                         htmlFor="inquiry-email"
-                        className="block font-display text-xs uppercase tracking-[0.22em] text-neutral-300"
+                        className="block font-display text-xs uppercase tracking-[0.22em] text-[#222222]"
                       >
                         {t.contact.emailLabel}
                       </label>
@@ -288,10 +286,10 @@ export function ContactSection({
                         }}
                         aria-invalid={Boolean(errors.email)}
                         placeholder={t.contact.emailPlaceholder}
-                        className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#eaeaea]/14 bg-[#080808] px-4 py-2.5 text-sm text-[#eaeaea] placeholder:text-neutral-600 transition-all duration-200 hover:border-[#eaeaea]/26 focus:border-[#c81018] focus:bg-[#0a0a0c] focus:ring-1 focus:ring-[#c81018]/35 focus:outline-none"
+                        className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-4 py-2.5 text-sm text-[#222222] placeholder:text-[#6B7280] transition-all duration-200 hover:border-[#222222]/30 focus:border-[#C62828] focus:bg-[#FFFFFF] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
                       />
                       {errors.email && (
-                        <p role="alert" className="mt-1.5 text-xs text-[#c81018]">
+                        <p role="alert" className="mt-1.5 text-xs text-[#C62828]">
                           {errors.email}
                         </p>
                       )}
@@ -301,7 +299,7 @@ export function ContactSection({
                   <div>
                     <label
                       htmlFor="inquiry-subject"
-                      className="block font-display text-xs uppercase tracking-[0.22em] text-neutral-300"
+                      className="block font-display text-xs uppercase tracking-[0.22em] text-[#222222]"
                     >
                       {t.contact.subjectLabel}
                     </label>
@@ -314,14 +312,14 @@ export function ContactSection({
                         setSubjectEdited(true);
                         setValues((prev) => ({ ...prev, subject: e.target.value }));
                       }}
-                      className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#eaeaea]/14 bg-[#080808] px-4 py-2.5 text-sm text-[#eaeaea] placeholder:text-neutral-600 transition-all duration-200 hover:border-[#eaeaea]/26 focus:border-[#c81018] focus:bg-[#0a0a0c] focus:ring-1 focus:ring-[#c81018]/35 focus:outline-none"
+                      className="mt-2 block min-h-[44px] w-full rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-4 py-2.5 text-sm text-[#222222] placeholder:text-[#6B7280] transition-all duration-200 hover:border-[#222222]/30 focus:border-[#C62828] focus:bg-[#FFFFFF] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="inquiry-message"
-                      className="block font-display text-xs uppercase tracking-[0.22em] text-neutral-300"
+                      className="block font-display text-xs uppercase tracking-[0.22em] text-[#222222]"
                     >
                       {t.contact.messageLabel}
                     </label>
@@ -337,10 +335,10 @@ export function ContactSection({
                       }}
                       aria-invalid={Boolean(errors.message)}
                       placeholder={t.contact.messagePlaceholder}
-                      className="mt-2 block w-full rounded-xl border border-[#eaeaea]/14 bg-[#080808] px-4 py-3 text-sm text-[#eaeaea] placeholder:text-neutral-600 transition-all duration-200 hover:border-[#eaeaea]/26 focus:border-[#c81018] focus:bg-[#0a0a0c] focus:ring-1 focus:ring-[#c81018]/35 focus:outline-none"
+                      className="mt-2 block w-full rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] px-4 py-3 text-sm text-[#222222] placeholder:text-[#6B7280] transition-all duration-200 hover:border-[#222222]/30 focus:border-[#C62828] focus:bg-[#FFFFFF] focus:ring-1 focus:ring-[#C62828]/35 focus:outline-none"
                     />
                     {errors.message && (
-                      <p role="alert" className="mt-1.5 text-xs text-[#c81018]">
+                      <p role="alert" className="mt-1.5 text-xs text-[#C62828]">
                         {errors.message}
                       </p>
                     )}
@@ -348,7 +346,7 @@ export function ContactSection({
 
                   <button
                     type="submit"
-                    className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-[#eaeaea]/35 bg-transparent px-8 py-3 font-display text-xs font-normal uppercase tracking-[0.28em] text-[#eaeaea] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#c81018] hover:bg-[#c81018] hover:text-white hover:shadow-[0_10px_28px_rgba(200,16,24,0.24)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c81018]"
+                    className="inline-flex min-h-[48px] items-center justify-center rounded-lg border border-[#222222] bg-[#222222] px-8 py-3 font-display text-xs font-normal uppercase tracking-[0.28em] text-white transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#C62828] hover:bg-[#C62828] hover:shadow-[0_10px_28px_rgba(198,40,40,0.24)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C62828]"
                   >
                     {t.contact.sendInquiry}
                   </button>
@@ -359,7 +357,7 @@ export function ContactSection({
         </div>
 
         {/* Quiet Editorial Footer */}
-        <div className="mt-20 flex flex-col items-center justify-between gap-4 border-t border-[#eaeaea]/10 pt-8 pb-12 text-xs tracking-[0.16em] text-neutral-400 sm:flex-row sm:pr-16 sm:pb-2">
+        <div className="mt-20 flex flex-col items-center justify-between gap-4 border-t border-[#E5E7EB] pt-8 pb-12 text-xs tracking-[0.16em] text-[#555555] sm:flex-row sm:pr-16 sm:pb-2">
           <p className="uppercase">
             &copy; {new Date().getFullYear()} {ARTIST_PROFILE.name} · {t.footer.rightsReserved}
           </p>
@@ -368,14 +366,14 @@ export function ContactSection({
               <button
                 type="button"
                 onClick={onReplayEntrance}
-                className="uppercase transition-colors hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-[#c81018]"
+                className="uppercase transition-colors hover:text-[#222222] focus-visible:outline-2 focus-visible:outline-[#C62828]"
               >
                 {t.footer.entranceGate}
               </button>
             )}
             <a
               href="#home"
-              className="uppercase transition-colors hover:text-[#eaeaea] focus-visible:outline-2 focus-visible:outline-[#c81018]"
+              className="uppercase transition-colors hover:text-[#222222] focus-visible:outline-2 focus-visible:outline-[#C62828]"
             >
               {t.footer.backToTop}
             </a>

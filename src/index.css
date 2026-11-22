@@ -265,8 +265,8 @@
 
 @layer base {
   html {
-    background-color: #050505;
-    color: #eaeaea;
+    background-color: #FFFFFF;
+    color: #222222;
     font-family: var(--font-sans);
   }
 
@@ -415,7 +415,7 @@
   letter-spacing: 0.46em;
   padding-left: 0.46em;
   text-transform: uppercase;
-  color: #eaeaea;
+  color: #222222;
   text-wrap: balance;
 }
 
@@ -426,7 +426,7 @@
   font-weight: 300;
   line-height: 1.5;
   letter-spacing: 0.24em;
-  color: rgba(234, 234, 234, 0.72);
+  color: #555555;
 }
 
 .portfolio-ornament-divider {
@@ -434,7 +434,6 @@
   width: 13.75rem;
   height: 3.35rem;
   overflow: hidden;
-  filter: drop-shadow(0 0 10px rgba(200, 16, 24, 0.22));
 }
 
 .portfolio-ornament-img {
@@ -445,6 +444,7 @@
   object-position: 50% 54.5%;
   pointer-events: none;
   user-select: none;
+  filter: brightness(0);
 }
 
 @media (min-width: 640px) {
